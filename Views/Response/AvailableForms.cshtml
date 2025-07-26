@@ -1,0 +1,45 @@
+@model List<SmartComply.Models.Form>
+@{
+	ViewData["Title"] = "Available Forms";
+}
+
+<div class="card">
+	<div class="card-header">
+		<h5 class="mb-0">Available Forms</h5>
+	</div>
+
+	<div class="card-body">
+		@if (!Model.Any())
+		{
+			<p class="text-muted">No forms are currently available to fill.</p>
+		}
+		else
+		{
+			<div class="table-responsive">
+				<table class="table table-hover table-bordered align-middle">
+					<thead>
+						<tr>
+							<th>Category</th>
+							<th>Created</th>
+							<th class="text-center">Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						@foreach (var form in Model)
+						{
+							<tr>
+								<td>@form.Category.CategoryName</td>
+								<td>@form.CreatedDate.ToLocalTime().ToString("g")</td>
+								<td class="text-center">
+									<a href="@Url.Action("Fill", "Response", new { id = form.FormId })" class="btn btn-sm btn-primary">
+										<i class="fas fa-pen me-1"></i> Fill Form
+									</a>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+</div>

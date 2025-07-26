@@ -1,0 +1,24 @@
+@{
+    Layout = "_CommonMasterLayout";
+}
+
+@section VendorStyles {
+    @RenderSection("VendorStyles", required: false)  @* Render Vendor Styles if available *@
+}
+
+@section PageStyles {
+    @RenderSection("PageStyles", required: false)  @* Render Page Styles if available *@
+}
+
+@RenderBody()  @* Render the body content of the page *@
+
+@section VendorScripts {
+    @RenderSection("VendorScripts", required: false)  @* Render Vendor Scripts if available *@
+}
+
+@section PageScripts {
+    @RenderSection("PageScripts", required: false)  @* Render Page Scripts if available *@
+}
+
+<!-- Render the Scripts section from the page if defined -->
+@RenderSection("Scripts", required: false)

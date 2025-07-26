@@ -1,0 +1,81 @@
+@model SmartComply.Models.Audit
+@{
+    ViewData["Title"] = "Audit Details";
+}
+
+<div class="card">
+    <div class="container mt-4">
+        <div class="card-header">
+            <h5>@Model.AuditName</h5>
+        </div>
+
+        <div class="card-body">
+            <p><strong>Status:</strong> @Model.Status</p>
+            <p><strong>Due Date:</strong> @Model.DueDate.ToShortDateString()</p>
+            <p><strong>Category:</strong> @Model.Category?.CategoryName</p>
+            <p><strong>Created By:</strong> @Model.Staff?.StaffName (@Model.Staff?.StaffEmail)</p>
+
+            <hr />
+
+            <h4 class="mt-4">Submitted Forms</h4>
+            @if (Model.FormResponders.Any())
+            {
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Form Name</th>
+                            <th>Submitted By</th>
+                            <th>Submitted At</th>
+                            <th>View</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var responder in Model.FormResponders)
+                        {
+                            <tr>
+                                <td>@responder.Form?.FormName</td>
+                                <td>@responder.Staff?.StaffName</td>
+                                <td>@responder.SubmittedAt.ToLocalTime().ToString("dd-MM-yyyy HH:mm")</td>
+                                <td>
+                                    <a href="@Url.Action("ViewForm", "ViewAudit", new { id = responder.FormResponderId })" class="btn btn-info" target="_blank">
+                                        View Form
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p>No forms submitted for this audit.</p>
+            }
+
+            <hr />
+
+            <h4 class="mt-4">Corrective Actions</h4>
+            @{
+                var correctiveActions = ViewBag.CorrectiveActions as List<SmartComply.Models.CorrectiveAction>;
+            }
+
+            @if (correctiveActions != null && correctiveActions.Any())
+            {
+                <ul class="list-group">
+                    @foreach (var ca in correctiveActions)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            @ca.Description
+                            <a href="@Url.Action("ViewCorrectiveAction", "ViewAudit", new { id = ca.CorrectiveActionId })" class="btn btn-primary btn-sm" target="_blank">
+                                View Details
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p>No corrective actions found for this audit.</p>
+            }
+        </div>
+    </div>
+</div>

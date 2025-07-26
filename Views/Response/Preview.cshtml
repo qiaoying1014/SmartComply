@@ -1,0 +1,228 @@
+@using Newtonsoft.Json
+@using System.Text.Encodings.Web
+
+@model SmartComply.ViewModels.FormFillViewModel
+
+@{
+    ViewData["Title"] = "Preview Form";
+}
+
+<div class="card">
+    <!-- Breadcrumb Navigation -->
+    <div class="card-header p-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Admin")" class="btn btn-link text-primary p-0">Home</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("MyAuditSummary", "Audit")" class="btn btn-link text-primary p-0">My Audit Summary</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("ViewCompliance", "Audit")" class="btn btn-link text-primary p-0">Compliance Selection</a></li>
+                <li class="breadcrumb-item">
+                    <a href="@Url.RouteUrl("AddAuditDetailsRoute", new { auditId = ViewBag.AuditId })" class="btn btn-link text-primary p-0">Select Form</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="@Url.RouteUrl("FillFormRoute", new { auditId = ViewBag.AuditId })" class="btn btn-link text-primary p-0">Fill Form</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Preview Response</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card-header">
+        <h5 class="mb-0">Response Preview</h5>
+    </div>
+
+    <div class="card-body">
+        <form asp-action="SubmitConfirmed" method="post">
+            @Html.AntiForgeryToken()
+
+            <!-- Hidden field for AuditId -->
+            <input type="hidden" name="AuditId" value="@Model.AuditId" />
+			<input type="hidden" name="PreviewJson" value="@Html.Raw(HtmlEncoder.Default.Encode(JsonConvert.SerializeObject(Model)))" />
+
+
+
+            @for (int i = 0; i < Model.Elements.Count; i++)
+            {
+                var element = Model.Elements[i];
+
+                switch (element.ElementType)
+                {
+                    case "CardStart":
+                        @:<div class="card mb-3">
+                        @:<div class="card-header bg-primary text-white">
+                        @:<h5>@element.Label</h5>
+                        @:</div>
+                        @:<div class="card-body">
+                        break;
+
+                    case "CardEnd":
+                        @:</div> <!-- close card-body -->
+                        @:</div> <!-- close card -->
+                        break;
+
+                    case "SectionHeader":
+                        <div class="mb-3">
+                            <h5 class="mt-4">@element.Label</h5>
+                        </div>
+                        break;
+
+                    case "Description":
+                        <div class="mb-3">
+                            <p>@element.Placeholder</p>
+                        </div>
+                        break;
+
+                    case "Divider":
+                        <hr />
+                        break;
+
+                    default:
+                        <div class="mb-3">
+                            <label class="form-label"><strong>@element.Label</strong></label>
+                            <div>
+                                @switch (element.ElementType)
+                                {
+                                    case "TextInput":
+                                    case "TextArea":
+                                    case "Paragraph":
+                                    case "Number":
+                                    case "Date":
+                                    case "Time":
+                                    case "Email":
+                                    case "Dropdown":
+                                    case "RadioButton":
+                                        <div>@element.Answer?.FirstOrDefault()</div>
+                                        break;
+
+                                    case "Checkbox":
+                                        if (element.Answer != null && element.Answer.Any())
+                                        {
+                                            <ul>
+                                                @foreach (var item in element.Answer)
+                                                {
+                                                    <li>@item</li>
+                                                }
+                                            </ul>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-muted"><em>No selections</em></div>
+                                        }
+                                        break;
+
+                                    case "FileUpload":
+                                        if (!string.IsNullOrEmpty(element.Answer?.FirstOrDefault()))
+                                        {
+                                            var fileName = element.Answer.First().Split('/').Last();
+                                            <div><i class="bi bi-paperclip"></i> @fileName</div>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-muted"><em>No file uploaded</em></div>
+                                        }
+                                        break;
+
+                                    default:
+                                        <div class="text-muted">[Unsupported type: @element.ElementType]</div>
+                                        break;
+                                }
+                            </div>
+                        </div>
+                        break;
+                }
+            }
+
+            <div class="mt-4">
+                <!-- Back to Edit Button with Confirmation -->
+                <a href="javascript:void(0)" class="btn btn-secondary" onclick="showBackToEditConfirmationModal()">Back to Edit</a>
+
+                <!-- Submit Button with Confirmation -->
+                <button type="button" class="btn btn-primary me-2" onclick="showSubmitConfirmationModal()">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- Modal for Back to Edit Confirmation -->
+<div class="modal fade" id="backToEditConfirmationModal" tabindex="-1" aria-labelledby="backToEditConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="backToEditConfirmationModalLabel">Confirm Navigation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to go back to the edit form? Any unsaved changes will be lost.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="goBackToEdit()">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Submit Confirmation -->
+<div class="modal fade" id="submitConfirmationModal" tabindex="-1" aria-labelledby="submitConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="submitConfirmationModalLabel">Confirm Submit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to submit this form? Please review your answers before submitting.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <!-- Make sure to trigger the form submission in the next line -->
+                <button type="button" class="btn btn-primary" onclick="submitForm()">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // Show Back to Edit Confirmation Modal
+        function showBackToEditConfirmationModal() {
+            $('#backToEditConfirmationModal').modal('show');
+        }
+
+       function goBackToEdit() {
+			// Create a form
+			var form = $('<form>', {
+				method: 'post',
+				action: '/Response/BackToEdit'
+			});
+
+			// Add anti-forgery token
+			var token = $('input[name="__RequestVerificationToken"]').val();
+			form.append($('<input>', { type: 'hidden', name: '__RequestVerificationToken', value: token }));
+
+			// Add serialized model from PreviewJson input
+			var json = $('input[name="PreviewJson"]').val();
+			form.append($('<input>', { type: 'hidden', name: 'PreviewJson', value: json }));
+
+			// Append and submit
+			$('body').append(form);
+			form.submit();
+		}
+
+        // Show Submit Confirmation Modal
+        function showSubmitConfirmationModal() {
+            $('#submitConfirmationModal').modal('show');
+        }
+
+        // Submit the form when confirmed
+        function submitForm() {
+            // This hides the modal after confirmation
+            $('#submitConfirmationModal').modal('hide'); 
+
+            // This triggers the form submission
+            $('form').submit();  
+        }
+    </script>
+}

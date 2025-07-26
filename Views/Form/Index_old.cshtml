@@ -1,0 +1,82 @@
+@model List<SmartComply.Models.Form>
+@{
+    ViewData["Title"] = "Form Management";
+    var currentStatus = ViewBag.StatusFilter as string;
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Form Management</h5>
+    </div>
+
+    <div class="card-body">
+        <!-- Status Tabs -->
+        <ul class="nav nav-tabs mb-4">
+            @foreach (var status in new[] { "Published", "Editing", "Revised" })
+            {
+                var active = currentStatus == status ? "active" : "";
+                <li class="nav-item">
+                    <a class="nav-link @active" href="@Url.Action("Index", new { status })">@status</a>
+                </li>
+            }
+        </ul>
+
+        <!-- Table or Empty State -->
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Created</th>
+                            <th>Elements</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var form in Model)
+                        {
+                            <tr>
+                                <td>@form.Category?.CategoryName</td>
+                                <td>@form.CreatedDate.ToLocalTime().ToString("g")</td>
+                                <td>@form.FormElements.Count</td>
+                                @* <td class="text-center"> *@
+                                @*     <a href="@Url.Action("Preview", "Form", new { id = form.FormId })" class="btn btn-sm btn-primary me-1" title="Preview"> *@
+                                @*         <i class="fas fa-eye"></i> *@
+                                @*     </a> *@
+                                @*     <a href="@Url.Action("Edit", "Form", new { id = form.FormId })" class="btn btn-sm btn-warning" title="Edit"> *@
+                                @*         <i class="fas fa-edit"></i> *@
+                                @*     </a> *@
+                                @* </td> *@
+                                <td class="text-center">
+                                    <div class="dropdown">
+                                        <button type="button" class="btn p-0 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Actions">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a class="dropdown-item" href="@Url.Action("Preview", "Form", new { id = form.FormId })">
+                                                    <i class="fas fa-eye me-1"></i> Preview
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="@Url.Action("Edit", "Form", new { id = form.FormId })">
+                                                    <i class="fas fa-edit me-1"></i> Edit
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">No forms found with status <strong>@currentStatus</strong>.</p>
+        }
+    </div>
+</div>

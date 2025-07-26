@@ -1,0 +1,172 @@
+@model SmartComply.Models.Form
+
+@{
+    ViewData["Title"] = "Form Preview";
+}
+
+<div class="card">
+    <div class="card-header p-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Admin")" class="btn btn-link text-primary p-0">Home</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Form")" class="btn btn-link text-primary p-0">Form Management</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Form Preview</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-4">Form Preview</h5>
+    </div>
+
+    <div class="card-body">
+        <div class="mb-3">
+            <p><strong>Category:</strong> @Model.Category.CategoryName</p>
+            <p><strong>Title:</strong> @Model.FormName</p>
+            <p><strong>Status:</strong> @Model.Status</p>
+            <p><strong>Created On:</strong> @Model.CreatedDate.ToLocalTime().ToString("f")</p>
+        </div>
+
+        <hr />
+
+        @foreach (var element in Model.FormElements.OrderBy(e => e.Order))
+        {
+            var options = string.IsNullOrWhiteSpace(element.Options)
+                ? new List<string>()
+                : element.Options.Split(',').Select(o => o.Trim()).ToList();
+
+            if (element.ElementType == "CardStart")
+            {
+                @: <div class="card mb-3">
+                @:     <div class="card-body">
+                if (!string.IsNullOrEmpty(element.Label))
+                {
+                    @:         <h5 class="card-title">@element.Label</h5>
+                }
+                continue;
+            }
+
+            if (element.ElementType == "CardEnd")
+            {
+                @:     </div> <!-- Close card-body -->
+                @: </div> <!-- Close card -->
+                continue;
+            }
+
+            <div class="form-group mb-4">
+                <label class="form-label fw-bold">
+                    @element.Label
+                    @if (element.IsRequired)
+                    {
+                        <span class="text-danger">*</span>
+                    }
+                </label>
+
+                @switch (element.ElementType)
+                {
+                    case "TextInput":
+                        <input type="text" class="form-control" placeholder="@(!string.IsNullOrWhiteSpace(element.Placeholder) ? element.Placeholder : "(text input)")" disabled />
+                        break;
+
+                    case "TextArea":
+                        <textarea class="form-control" placeholder="@(!string.IsNullOrWhiteSpace(element.Placeholder) ? element.Placeholder : "(text area)")" disabled></textarea>
+                        break;
+
+                    case "Number":
+                        <input type="number" class="form-control" placeholder="@(!string.IsNullOrWhiteSpace(element.Placeholder) ? element.Placeholder : "(number input)")" disabled />
+                        break;
+
+                    case "Email":
+                        <input type="email" class="form-control" placeholder="@(!string.IsNullOrWhiteSpace(element.Placeholder) ? element.Placeholder : "(email)")" disabled />
+                        break;
+
+                    case "Date":
+                        <input type="date" class="form-control" disabled />
+                        break;
+
+                    case "Time":
+                        <input type="time" class="form-control" disabled />
+                        break;
+
+                    case "Checkbox":
+                        if (options.Any())
+                        {
+                            foreach (var opt in options)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" disabled />
+                                    <label class="form-check-label">@opt</label>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" disabled />
+                                <label class="form-check-label">Option</label>
+                            </div>
+                        }
+                        break;
+
+                    case "RadioButton":
+                        if (options.Any())
+                        {
+                            foreach (var opt in options)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="radio_@element.FormElementId" disabled />
+                                    <label class="form-check-label">@opt</label>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="radio_@element.FormElementId" disabled />
+                                <label class="form-check-label">Option</label>
+                            </div>
+                        }
+                        break;
+
+                    case "Dropdown":
+                        <select class="form-select" disabled>
+                            @if (options.Any())
+                            {
+                                foreach (var opt in options)
+                                {
+                                    <option>@opt</option>
+                                }
+                            }
+                            else
+                            {
+                                <option>Option 1</option>
+                            }
+                        </select>
+                        break;
+
+                    case "SectionHeader":
+                        <h4 class="mt-4 border-bottom pb-2">@element.Label</h4>
+                        break;
+
+                    case "Description":
+                        <p class="text-muted fst-italic">@element.Label</p>
+                        break;
+
+                    case "Divider":
+                        <hr />
+                        break;
+
+                    case "FileUpload":
+                        <input type="file" class="form-control" disabled />
+                        break;
+
+                    default:
+                        <p class="text-danger">(Unsupported element type: @element.ElementType)</p>
+                        break;
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<a href="@Url.Action("Index", "Form")" class="btn btn-secondary mt-4">Back to Form List</a>

@@ -1,0 +1,615 @@
+@model SmartComply.ViewModels.FormBuilderViewModel
+
+@{
+    ViewData["Title"] = "Edit Form";
+}
+
+<div class="card">
+    <div class="card-header p-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Admin")" class="btn btn-link text-primary p-0">Home</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Form")" class="btn btn-link text-primary p-0">Form Management</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Edit Form</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Edit Form</h5>
+        <div>
+            <!-- Reset Button with Tooltip -->
+            <button type="button" class="btn btn-outline-secondary me-2" onclick="showResetConfirmationModal()" data-bs-toggle="tooltip" data-bs-placement="top" title="Reset the form and clear any changes made">Reset</button>
+
+            <!-- Save Button with Tooltip -->
+            <button type="button" class="btn btn-primary" onclick="showSaveConfirmationModal()" data-bs-toggle="tooltip" data-bs-placement="top" title="Save changes and mark the form as 'Revised'">Save</button>
+
+            <!-- Publish Button with Tooltip -->
+            <button type="button" class="btn btn-success ms-2" onclick="showPublishConfirmationModal()" data-bs-toggle="tooltip" data-bs-placement="top" title="Publish the form, making it ready for users">Publish</button>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <!-- Builder Panel -->
+            <div class="col-md-6">
+                <form id="form-builder" asp-action="Edit" method="post">
+                    <input type="hidden" asp-for="FormId" />
+
+                    <div class="mb-3">
+                        <label for="category-select" class="form-label">Form Category</label>
+                        <select asp-for="CategoryId" class="form-control" asp-items="Model.Categories" required id="category-select">
+                            <option value="" disabled selected>-- Select a Category --</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="FormName" class="form-label">Form Name</label>
+                        <input asp-for="FormName" class="form-control" placeholder="Enter a form title" />
+                        <span asp-validation-for="FormName" class="text-danger"></span>
+                    </div>
+
+
+                    <h5>Form Elements <small id="elements-summary" class="text-muted">0 questions added</small></h5>
+
+                    <div id="form-elements-container" class="mb-3">
+                        @for (int i = 0; i < Model.FormElements.Count; i++)
+                        {
+                            var element = Model.FormElements[i];
+                            <div class="form-element border mb-3 rounded shadow-sm bg-light">
+                                <div class="d-flex justify-content-between align-items-center bg-secondary text-white px-3 py-2 rounded-top collapsible-header" onclick="toggleCollapse(this)" style="cursor:pointer;">
+                                    <div>
+                                        <span class="drag-handle me-2" style="cursor: grab;">☰</span>
+                                        <strong class="element-title">@(!string.IsNullOrEmpty(element.Label) ? element.Label : "Untitled")</strong>
+                                    </div>
+                                    <span class="toggle-icon">▼</span>
+                                </div>
+
+                                <div class="collapsible-body p-3">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label>Label</label>
+                                            <input type="text" name="FormElements[@i].Label" class="form-control label-input" value="@element.Label" required oninput="updatePreview(); updateElementTitle(this)" />
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label>Element Type</label>
+                                            <select name="FormElements[@i].ElementType" class="form-control element-type-selector" data-index="@i" onchange="toggleOptions(this); updatePreview()">
+                                                <option value="TextInput" selected="@(element.ElementType == "TextInput" ? "selected" : null)">Text Input</option>
+                                                <option value="TextArea" selected="@(element.ElementType == "TextArea" ? "selected" : null)">Text Area</option>
+                                                <option value="Checkbox" selected="@(element.ElementType == "Checkbox" ? "selected" : null)">Checkbox</option>
+                                                <option value="RadioButton" selected="@(element.ElementType == "RadioButton" ? "selected" : null)">Radio Button</option>
+                                                <option value="Dropdown" selected="@(element.ElementType == "Dropdown" ? "selected" : null)">Dropdown</option>
+                                                <option value="Number" selected="@(element.ElementType == "Number" ? "selected" : null)">Number Input</option>
+                                                <option value="Email" selected="@(element.ElementType == "Email" ? "selected" : null)">Email</option>
+                                                <option value="Date" selected="@(element.ElementType == "Date" ? "selected" : null)">Date</option>
+                                                <option value="Time" selected="@(element.ElementType == "Time" ? "selected" : null)">Time</option>
+                                                <option value="SectionHeader" selected="@(element.ElementType == "SectionHeader" ? "selected" : null)">Section Title</option>
+                                                <option value="FileUpload" selected="@(element.ElementType == "FileUpload" ? "selected" : null)">File Upload</option>
+                                                <option value="Description" selected="@(element.ElementType == "Description" ? "selected" : null)">Informational Text</option>
+                                                <option value="Divider" selected="@(element.ElementType == "Divider" ? "selected" : null)">Divider Line</option>
+                                                <option value="CardStart" selected="@(element.ElementType == "CardStart" ? "selected" : null)">Card Section Start</option>
+                                                <option value="CardEnd" selected="@(element.ElementType == "CardEnd" ? "selected" : null)">Card Section End</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="placeholder-label">Placeholder</label>
+                                            <input type="text" name="FormElements[@i].Placeholder" class="form-control placeholder-input" value="@element.Placeholder" oninput="updatePreview()" />
+                                        </div>
+
+										<div class="col-md-6" style="display: flex; align-items: center;">
+											<label style="margin-right: 10px;">Required?</label>
+											<input type="hidden" name="FormElements[@i].IsRequiredDefault" value="false" />
+											<input type="checkbox" name="FormElements[@i].IsRequired" value="true" @(element.IsRequired ? "checked" : "") onchange="updatePreview()" />
+										</div>
+
+                                        <div class="col-md-12 options-container" id="options-@i" style="display: none;">
+                                            <label>Options (comma-separated)</label>
+                                            <input type="text" name="FormElements[@i].Options" class="form-control options-input" value="@element.Options" oninput="updatePreview()" />
+                                        </div>
+
+                                        <input type="hidden" name="FormElements[@i].Order" value="@element.Order" />
+                                        <input type="hidden" name="FormElements[@i].FormElementId" value="@element.FormElementId" />
+                                    </div>
+
+                                    <button type="button" class="btn btn-danger btn-sm mt-3"
+                                            onclick="this.closest('.form-element').remove(); updateOrderInputs(); updatePreview(); updateSummary();"
+                                            data-bs-toggle="tooltip" data-bs-placement="top" title="Remove this form element">
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <button type="button" class="btn btn-secondary mb-3" onclick="addElement()" data-bs-toggle="tooltip" data-bs-placement="top" title="Click to add a new form element">+ Add Element</button>
+                </form>
+            </div>
+
+            <!-- Live Preview Panel -->
+            <div class="col-md-6">
+                <h5>Live Preview</h5>
+                <div id="form-preview" class="border rounded p-3 bg-light" style="min-height: 400px;">
+                    <em>No form elements yet. Start by adding one.</em>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Reset Confirmation -->
+<div class="modal fade" id="resetConfirmationModal" tabindex="-1" aria-labelledby="resetConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetConfirmationModalLabel">Confirm Reset</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to reset this form? All changes will be lost.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="resetForm()">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Save Confirmation -->
+<div class="modal fade" id="saveConfirmationModal" tabindex="-1" aria-labelledby="saveConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="saveConfirmationModalLabel">Confirm Save</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to save these changes?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitForm()">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Publish Confirmation -->
+<div class="modal fade" id="publishConfirmationModal" tabindex="-1" aria-labelledby="publishConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="publishConfirmationModalLabel">Confirm Publish</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to publish this form? It will be visible to users.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="publishForm()">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script>
+        let index = @Model.FormElements.Count;
+        const container = document.getElementById("form-elements-container");
+        const preview = document.getElementById("form-preview");
+
+        Sortable.create(container, {
+            animation: 150,
+            handle: ".drag-handle",
+            onEnd: updateOrderInputs
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialElements = container.querySelectorAll('.form-element');
+            initialElements.forEach((element, i) => {
+                const select = element.querySelector('.element-type-selector');
+                if (select) {
+                    select.setAttribute('data-index', i);
+                    toggleOptions(select);
+                }
+                const labelInput = element.querySelector('.label-input');
+                if (labelInput) {
+                    updateElementTitle(labelInput);
+                }
+            });
+            updateOrderInputs();
+            updatePreview();
+            updateSummary();
+        });
+
+        function addElement() {
+            const currentIndex = index;
+
+            const html = `
+                <div class="form-element border mb-3 rounded shadow-sm bg-light">
+                    <div class="d-flex justify-content-between align-items-center bg-secondary text-white px-3 py-2 rounded-top collapsible-header" onclick="toggleCollapse(this)" style="cursor:pointer;">
+                        <div>
+                            <span class="drag-handle me-2" style="cursor: grab;">☰</span>
+                            <strong class="element-title">Untitled</strong>
+                        </div>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+
+                    <div class="collapsible-body p-3">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label>Label</label>
+                                <input type="text" name="FormElements[${currentIndex}].Label" class="form-control label-input" required
+                                    oninput="updatePreview(); updateElementTitle(this)" />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label>Element Type</label>
+                                <select name="FormElements[${currentIndex}].ElementType" class="form-control element-type-selector"
+                                    data-index="${currentIndex}" onchange="toggleOptions(this); updatePreview()">
+                                    <option value="TextInput">Text Input</option>
+                                    <option value="TextArea">Text Area</option>
+                                    <option value="Checkbox">Checkbox</option>
+                                    <option value="RadioButton">Radio Button</option>
+                                    <option value="Dropdown">Dropdown</option>
+                                    <option value="Number">Number Input</option>
+                                    <option value="Email">Email</option>
+                                    <option value="Date">Date</option>
+                                    <option value="Time">Time</option>
+                                    <option value="SectionHeader">Section Title</option>
+                                    <option value="FileUpload">File Upload</option>
+                                    <option value="Description">Informational Text</option>
+                                    <option value="Divider">Divider Line</option>
+                                    <option value="CardStart">Card Section Start</option>
+                                    <option value="CardEnd">Card Section End</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="placeholder-label">Placeholder</label>
+                                <input type="text" name="FormElements[${currentIndex}].Placeholder" class="form-control placeholder-input" oninput="updatePreview()" />
+                            </div>
+
+						  <div class="col-md-6" style="display: flex; align-items: center;">
+								<label style="margin-right: 10px;">Required?</label>
+								<input type="hidden" name="FormElements[${currentIndex}].IsRequiredDefault" value="false" />
+								<input type="checkbox" name="FormElements[${currentIndex}].IsRequired" value="true" onchange="updatePreview()" />
+							</div>
+
+									<div class="col-md-12 options-container" id="options-${currentIndex}" style="display:none;">
+                                <label>Options (comma-separated)</label>
+                                <input type="text" name="FormElements[${currentIndex}].Options" class="form-control options-input" oninput="updatePreview()" />
+                            </div>
+
+                            <input type="hidden" name="FormElements[${currentIndex}].Order" value="${currentIndex}" />
+                            <input type="hidden" name="FormElements[${currentIndex}].FormElementId" value="0" />
+                        </div>
+
+                        <button type="button" class="btn btn-danger btn-sm mt-3" onclick="this.closest('.form-element').remove(); updateOrderInputs(); updatePreview(); updateSummary();">Remove</button>
+                    </div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML("beforeend", html);
+
+            const newSelect = container.querySelector(`select.element-type-selector[data-index="${currentIndex}"]`);
+            toggleOptions(newSelect);
+
+            index++;
+            updatePreview();
+            updateSummary();
+        }
+
+        function updateOrderInputs() {
+            const items = container.querySelectorAll('.form-element');
+            items.forEach((item, i) => {
+                const orderInput = item.querySelector('input[name$=".Order"]');
+                if (orderInput) orderInput.value = i;
+
+                item.querySelectorAll('input, select, textarea').forEach(input => {
+                    const name = input.getAttribute('name');
+                    if (name) {
+                        const newName = name.replace(/FormElements\[\d+\]/, `FormElements[${i}]`);
+                        input.setAttribute('name', newName);
+                    }
+                    if (input.classList.contains('element-type-selector')) {
+                        input.setAttribute('data-index', i);
+                    }
+                });
+
+                const optionsDiv = item.querySelector('.options-container');
+                if (optionsDiv) {
+                    optionsDiv.id = `options-${i}`;
+                }
+            });
+            updatePreview();
+            updateSummary();
+        }
+
+        function toggleCollapse(header) {
+            const body = header.nextElementSibling;
+            const icon = header.querySelector(".toggle-icon");
+
+            if (body.style.display === "none") {
+                body.style.display = "block";
+                icon.textContent = "▼";
+            } else {
+                body.style.display = "none";
+                icon.textContent = "▶";
+            }
+        }
+
+        function updateElementTitle(input) {
+            const title = input.closest(".form-element").querySelector(".element-title");
+            title.textContent = input.value.trim() || "Untitled";
+        }
+
+				function toggleOptions(select) {
+			const index = select.getAttribute("data-index");
+			const formElement = select.closest('.form-element');
+
+			const optionsDiv = formElement.querySelector(`#options-${index}`);
+			const labelInput = formElement.querySelector('.label-input');
+			const labelLabel = formElement.querySelector('.label-label');
+			const placeholderInput = formElement.querySelector('.placeholder-input');
+			const placeholderLabel = formElement.querySelector('.placeholder-label');
+			const requiredCheckbox = formElement.querySelector('input[name$=".IsRequired"]');
+			const requiredLabel = requiredCheckbox?.closest('div')?.querySelector('label');
+
+			const type = select.value;
+
+			// Toggle options section
+			if (["Dropdown", "Checkbox", "RadioButton"].includes(type)) {
+				if (optionsDiv) optionsDiv.style.display = "block";
+			} else {
+				if (optionsDiv) {
+					optionsDiv.style.display = "none";
+					const optionsInput = formElement.querySelector('.options-input');
+					if (optionsInput) optionsInput.value = "";
+				}
+			}
+
+			// Toggle placeholder
+			if (["TextInput", "TextArea", "Number", "Email"].includes(type)) {
+				if (placeholderInput) placeholderInput.style.display = "block";
+				if (placeholderLabel) placeholderLabel.style.display = "block";
+			} else {
+				if (placeholderInput) {
+					placeholderInput.style.display = "none";
+					placeholderInput.value = "";
+				}
+				if (placeholderLabel) placeholderLabel.style.display = "none";
+			}
+
+			// Toggle label visibility
+			if (["CardEnd", "Divider"].includes(type)) {
+				if (labelInput) {
+					labelInput.style.display = "none";
+					labelInput.removeAttribute("required");
+				}
+				if (labelLabel) labelLabel.style.display = "none";
+			} else {
+				if (labelInput) {
+					labelInput.style.display = "block";
+					labelInput.setAttribute("required", "");
+				}
+				if (labelLabel) labelLabel.style.display = "block";
+			}
+
+			// Toggle required checkbox
+			if (["SectionHeader", "Description", "Divider", "CardStart", "CardEnd"].includes(type)) {
+				if (requiredLabel) requiredLabel.style.display = "none";
+				if (requiredCheckbox) {
+					requiredCheckbox.style.display = "none";
+					requiredCheckbox.checked = false;
+				}
+			} else {
+				if (requiredLabel) requiredLabel.style.display = "block";
+				if (requiredCheckbox) requiredCheckbox.style.display = "block";
+			}
+
+			// Set default label value if empty
+			if ((type === "CardStart" || type === "CardEnd" || type === "Divider") && labelInput && !labelInput.value.trim()) {
+				labelInput.value = type === "CardStart" ? "Card Start"
+									: type === "CardEnd" ? "Card End"
+									: "Divider Line";
+				updateElementTitle(labelInput);
+			}
+		}
+
+
+                // Show Reset Confirmation Modal
+        function showResetConfirmationModal() {
+            $('#resetConfirmationModal').modal('show');
+        }
+
+        // Show Save Confirmation Modal
+        function showSaveConfirmationModal() {
+            $('#saveConfirmationModal').modal('show');
+        }
+
+        // Show Publish Confirmation Modal
+        function showPublishConfirmationModal() {
+            $('#publishConfirmationModal').modal('show');
+        }
+
+        // Handle the reset form action
+        function resetForm() {
+            // Reset the form to its initial state
+            const form = document.getElementById('form-builder');
+            form.reset(); // This resets all form fields, but we need to handle the category separately
+
+            // Manually reset the selected category to the initial value (saved state from the database)
+            const categorySelect = document.getElementById("category-select");
+            categorySelect.value = '@Model.CategoryId'; // Ensure the category is set to the initial selected value from the model
+
+            // Update preview and summary
+            updatePreview();
+            updateSummary();
+
+            // Hide the reset confirmation modal
+            $('#resetConfirmationModal').modal('hide');
+        }
+        // Handle the save form action
+        function submitForm() {
+            // Submit the form
+            document.getElementById('form-builder').submit();
+            $('#saveConfirmationModal').modal('hide'); // Close the modal after form submission
+        }
+
+        // Handle the publish form action
+        function publishForm() {
+            // Set the action to "publish" before submitting
+            const form = document.getElementById('form-builder');
+            const actionInput = document.createElement('input');
+            actionInput.setAttribute('type', 'hidden');
+            actionInput.setAttribute('name', 'action');
+            actionInput.setAttribute('value', 'publish'); // Set the action as 'publish'
+            form.appendChild(actionInput);
+
+            // Submit the form
+            form.submit();
+
+            // Hide the modal after submission
+            $('#publishConfirmationModal').modal('hide');
+        }
+
+
+        function updatePreview() {
+            const formElements = container.querySelectorAll('.form-element');
+            if (formElements.length === 0) {
+                preview.innerHTML = "<em>No form elements yet. Start by adding one.</em>";
+                return;
+            }
+
+            let html = "";
+            let openCards = 0;
+
+            formElements.forEach(el => {
+                const label = el.querySelector('.label-input')?.value || "(No label)";
+                const placeholder = el.querySelector('.placeholder-input')?.value || "";
+                const required = el.querySelector('input[type="checkbox"][name$=".IsRequired"]')?.checked;
+                const type = el.querySelector('.element-type-selector')?.value;
+                const options = el.querySelector('.options-input')?.value || "";
+
+                switch (type) {
+                    case "TextInput":
+                        html += `<label><strong>${label}${required ? " *" : ""}</strong></label><br/>`;
+                        html += `<input type="text" class="form-control" placeholder="${placeholder}" ${required ? "required" : ""} />`;
+                        break;
+
+                    case "TextArea":
+                        html += `<label><strong>${label}${required ? " *" : ""}</strong></label><br/>`;
+                        html += `<textarea class="form-control" placeholder="${placeholder}" ${required ? "required" : ""}></textarea>`;
+                        break;
+
+                    case "Dropdown":
+                        html += `<label><strong>${label}${required ? " *" : ""}</strong></label><br/>`;
+                        html += `<select class="form-select" ${required ? "required" : ""}>`;
+                        options.split(',').map(opt => opt.trim()).filter(opt => opt !== "").forEach(opt => {
+                            html += `<option>${opt}</option>`;
+                        });
+                        html += `</select>`;
+                        break;
+
+                    case "Checkbox":
+                        html += `<label><strong>${label}${required ? " *" : ""}</strong></label><br/>`;
+                        options.split(',').map(opt => opt.trim()).filter(opt => opt !== "").forEach(opt => {
+                            html += `
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="${opt}">
+                                    <label class="form-check-label" for="${opt}">${opt}</label>
+                                </div>`;
+                        });
+                        break;
+
+                    case "RadioButton":
+                        html += `<label><strong>${label}${required ? " *" : ""}</strong></label><br/>`;
+                        options.split(',').map(opt => opt.trim()).filter(opt => opt !== "").forEach(opt => {
+                            html += `
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="${label}" id="${opt}">
+                                    <label class="form-check-label" for="${opt}">${opt}</label>
+                                </div>`;
+                        });
+                        break;
+
+                    case "Number":
+                        html += `<label><strong>${label}${required ? " *" : ""}</strong></label><br/>`;
+                        html += `<input type="number" class="form-control" placeholder="${placeholder}" ${required ? "required" : ""} />`;
+                        break;
+
+                    case "Email":
+                        html += `<label><strong>${label}${required ? " *" : ""}</strong></label><br/>`;
+                        html += `<input type="email" class="form-control" placeholder="${placeholder}" ${required ? "required" : ""} />`;
+                        break;
+
+                    case "Date":
+                        html += `<label><strong>${label}${required ? " *" : ""}</strong></label><br/>`;
+                        html += `<input type="date" class="form-control" ${required ? "required" : ""} />`;
+                        break;
+
+                    case "Time":
+                        html += `<label><strong>${label}${required ? " *" : ""}</strong></label><br/>`;
+                        html += `<input type="time" class="form-control" ${required ? "required" : ""} />`;
+                        break;
+
+                    case "SectionHeader":
+                        html += `<h5 class="mt-4 mb-2">${label}</h5>`;
+                        break;
+
+                    case "FileUpload":
+                        html += `<label><strong>${label}${required ? " *" : ""}</strong></label><br/>`;
+                        html += `<input type="file" class="form-control" ${required ? "required" : ""} />`;
+                        break;
+
+                    case "Description":
+                        html += `<p class="form-text text-muted">${label}</p>`;
+                        break;
+
+                    case "Divider":
+                        html += `<hr class="my-4">`;
+                        break;
+
+                    case "CardStart":
+                        html += `
+                            <div class="card mb-4">
+                                <div class="card-header bg-primary text-white">
+                                    <h5>${label || "Card Section"}</h5>
+                                </div>
+                                <div class="card-body">`;
+                        openCards++;
+                        break;
+
+                    case "CardEnd":
+                        if (openCards > 0) {
+                            html += `</div></div>`;
+                            openCards--;
+                        } else {
+                            html += `<p class="text-danger">Warning: Card End without matching Card Start.</p>`;
+                        }
+                        break;
+
+                    default:
+                        html += `<p class="text-danger">Unknown element type: ${type}</p>`;
+                        break;
+                }
+            });
+
+            while (openCards > 0) {
+                html += `</div></div>`;
+                openCards--;
+            }
+
+            preview.innerHTML = html;
+        }
+
+        function updateSummary() {
+            const count = document.querySelectorAll('.form-element').length;
+            document.getElementById("elements-summary").innerText = `${count} question${count !== 1 ? "s" : ""} added`;
+        }
+
+    </script>
+}

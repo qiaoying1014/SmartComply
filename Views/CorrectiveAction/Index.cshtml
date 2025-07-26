@@ -1,0 +1,230 @@
+@model IEnumerable<SmartComply.Models.CorrectiveAction>
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery AntiForgery
+@using SmartComply.Models
+
+@{
+    ViewData["Title"] = "Corrective Action Management";
+}
+
+@{
+    // Obtain the tokens using the current HttpContext
+    var tokens = AntiForgery.GetAndStoreTokens(ViewContext.HttpContext);
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    TempData.Remove("SuccessMessage");
+}
+
+<div class="card">
+    <!-- Breadcrumb Navigation -->
+    <div class="card-header p-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Admin")" class="btn btn-link text-primary p-0">Home</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("MyAuditSummary", "Audit")" class="btn btn-link text-primary p-0">My Audit Summary</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Corrective Action Management</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Corrective Actions Management</h5>
+
+        <!-- Container for the buttons with right alignment -->
+        <div class="d-flex ms-auto">
+            <!-- Add button -->
+            <a asp-action="Add"
+               class="btn btn-primary"
+               data-bs-toggle="tooltip"
+               data-bs-placement="top"
+               title="Click to add a new corrective action"
+               asp-route-auditId="@ViewBag.AuditId">
+                + Add Corrective Action
+            </a>
+
+            <!-- Recover button styled as light with a small shadow -->
+            <a class="btn btn-light shadow-sm ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Click to recover a corrective action"
+               href="@Url.Action("Recover", new { auditId = ViewBag.AuditId })">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAAXNSR0IArs4c6QAAA6JJREFUSEvNll1oW2UYx//POenSLzfn/GCzyoqIqAhWk56ja7FFUcd6UgUzxrbC2EzSOYTtSi9U6pUXgkUHbj3p2uF0YANzy2mt7MJ2rHbJaYZTdIgD64Uf4IbWtkvTJud95MxkpPloUgvFF96r93me3/k/XxzCKh9aZR7+/8BD3vGq+JxUR5J8p5USV6lOntR1V7LcTJWl8MCL0Q3JJPaCsB3AowB++ffy7QBtBugyIM4mU2ve6x9+7OpS8Bwg0/5tsfojQ+6fMk4+zdxD4G4AEQAnsFEOZSvyegfkWxObmyQSu5hpBxO/GQyr7xeDLgL6NHM7gY8xqO3umetf/bq2+hgJahDMB3qHlPOl0tbpmdgiWHzMhFhyOt5xfLQ1keuzCBjwmLuZ+QSABBEmmFHpTPEzh4fV6VKwzLvfG1vHCREiYFo33F6AONu3GPCGDRPvC4bVvkIwvxbduWkmPtA12prKffdrsWrAGmXiz4Jh9Z2iQJ8W6SDQR1kGCwL8VK+h2vW7eWwVSFhTgPygbrh+KPRBnZ6JBsHiAirkev2U6/eMzSKF/rZIE4jOAZCygpzTDaVluUDbPuCJfiEYl4KG8npB4HLqVEqhHcuvRV8A8IFuKPeuCvDVrVec844/E2zhgeDnyo82tKzBz2uKMmp4s2u16CSDXgsajQN5wP3bzq+3qMKtD6pnl0qv1/v9mvWJ2bmcWmc6+2D24Ps90a/BOKobSk8e0Oe54CGWunVDua9UPX2a+bDM1h25dguSdbEv3DSTpdDeWm/ohnIyDxhojzzEgr6rqbRqukNP2gpWdDqe/aamypmYAnOrPqiO5QG7WkYcv9VWX4OEXXpYGVoR7cZYmM8z8ylslNdl9m9e0/g1sw8Q1bqh7lgxUIt+ykCNbihtRcfCp5luAptEcPeEldh/hfrbxx+BkL8Fc3MmnUXHIqBF+hnkcqZucx0evn9+udD0Lo2B6Yo+2Nie7V9wDtO7chzApU2PN3Z0dZEoF7rXM3aLQ1ScAWGDozK+5cNQ62xJoG3w8tZIneSgLxn8hyzz7qOnn/i5FDSdxpMMjidl53PHTzdM5fosuWnSbd0PQAPjLZkXeo8MNf+VHWRPy0ilc21VM7P0EsD7mPBJrdPqLDZWZa22QJv5tCDxNoEUO80ArgOQAdyTvnMEDkHCuz1n1MtLZaIsYCbAK96R2tR8lZuBegB3QUjXINNk8u/ZsUK/E4XAywKWqmE576sO/Ac6yI0s9XnCMgAAAABJRU5ErkJggg=="
+                     alt="Recover"
+                     style="width:20px; height:20px;" />
+            </a>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <!-- Filter and Search form -->
+            <form method="get" asp-action="Index" role="search" class="d-flex" style="width: 100%;">
+                <!-- Add Hidden input for auditId -->
+                <input type="hidden" name="auditId" value="@ViewBag.AuditId" />
+
+                <div class="d-flex align-items-center rounded-pill border overflow-hidden" style="border-color: #ced4da; width: 100%;">
+                    <!-- Status Filter Dropdown -->
+                    <select name="statusFilter" aria-label="Filter by status" class="form-control border-0 rounded-0" style="max-width: 120px; box-shadow: none; height: 50px; font-size: 1rem; background-color: transparent !important;">
+                        <option value="" selected="@(string.IsNullOrEmpty(ViewBag.StatusFilter?.ToString()) ? "selected" : null)">All Statuses</option>
+                        <option value="Pending" selected="@(ViewBag.StatusFilter?.ToString().ToLower() == "pending" ? "selected" : null)">Pending</option>
+                        <option value="InProgress" selected="@(ViewBag.StatusFilter?.ToString().ToLower() == "inprogress" ? "selected" : null)">In Progress</option>
+                        <option value="Completed" selected="@(ViewBag.StatusFilter?.ToString().ToLower() == "completed" ? "selected" : null)">Completed</option>
+                        <option value="Overdue" selected="@(ViewBag.StatusFilter?.ToString().ToLower() == "overdue" ? "selected" : null)">Overdue</option>
+                    </select>
+
+                    <!-- Separator line -->
+                    <div style="width: 1px; background-color: #999; height: 30px; margin: 0 8px;"></div>
+
+                    <!-- Search input -->
+                    <input type="search" name="searchTerm" placeholder="What are you looking for ...?" value="@(ViewBag.SearchTerm ?? "")" aria-label="Search" class="form-control border-0 rounded-0 flex-grow-1" style="box-shadow: none; height: 45px; font-size: 1rem; background-color: transparent !important;">
+
+                    <!-- Search button -->
+                    <button type="submit" class="btn btn-warning rounded-pill ml-2 d-flex align-items-center justify-content-center" aria-label="Search" style="height: 50px; padding: 0 1.25rem;" data-bs-toggle="tooltip" data-bs-placement="top" title="Click to search">
+                        <i class="bx bx-search" style="font-size: 1.2rem;"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <small class="text-muted d-block">For @ViewBag.AuditName</small>
+        <div class="table-responsive">
+            <table class="table table-hover" id="correctiveActionsTable">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Responsible Person</th>
+                        <th>Target Date</th>
+                        <th>Completion Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr id="row-@item.CorrectiveActionId">
+                            <td>@item.Description</td>
+                            <td>@item.ResponsiblePerson</td>
+                            <td>@item.TargetDate.ToString("dd-MM-yyyy")</td>
+                            <td>
+                                @(item.CompletionDate.HasValue ? item.CompletionDate.Value.ToString("dd-MM-yyyy") : "")
+                            </td>
+                            <td>
+                                @switch (item.Status)
+                                {
+                                    case CorrectiveActionStatus.Pending:
+                                        <span class="badge bg-label-warning">Pending</span>
+                                        break;
+                                    case CorrectiveActionStatus.InProgress:
+                                        <span class="badge bg-label-info">In Progress</span>
+                                        break;
+                                    case CorrectiveActionStatus.Completed:
+                                        <span class="badge bg-label-success">Completed</span>
+                                        break;
+                                    case CorrectiveActionStatus.Overdue:
+                                        <span class="badge bg-label-danger">Overdue</span>
+                                        break;
+                                }
+                            </td>
+                            <td>
+                                <div class="dropdown">
+                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                        <i class="bx bx-dots-vertical-rounded"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="@Url.Action("Edit", "CorrectiveAction", new { id = item.CorrectiveActionId, auditId = ViewBag.AuditId })">
+                                            <i class="bx bx-edit-alt me-1"></i> Edit
+                                        </a>
+                                        <button type="button" class="dropdown-item text-danger" onclick="showConfirmationModal('@item.CorrectiveActionId')">
+                                            <i class="bx bx-trash me-1"></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (!Model.Any())
+            {
+                <div class="text-center text-muted py-4">
+                    No corrective actions found for @ViewBag.AuditName.
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Modal for Confirmation -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmationModalLabel">Confirm Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete this corrective action?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmActionBtn">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to show the confirmation modal and set the CorrectiveActionId
+        function showConfirmationModal(correctiveActionId) {
+            // Store the correctiveActionId in a data attribute of the confirm button
+            var confirmButton = document.getElementById('confirmActionBtn');
+            confirmButton.setAttribute('data-corrective-action-id', correctiveActionId);
+
+            // Show the modal
+            $('#confirmationModal').modal('show');
+        }
+
+        // Handle the confirmation button click
+        document.getElementById('confirmActionBtn').addEventListener('click', function() {
+            // Get the CorrectiveActionId from the data attribute
+            var correctiveActionId = this.getAttribute('data-corrective-action-id');
+
+            // Create a FormData object to send with the POST request
+            var formData = new FormData();
+            formData.append("id", correctiveActionId);
+
+            // Send the POST request using Fetch API
+            fetch('@Url.Action("SoftDelete", "CorrectiveAction")', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'RequestVerificationToken': '@AntiForgery.GetAndStoreTokens(ViewContext.HttpContext).RequestToken'
+                }
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Redirect to the Index page after successful deletion
+                    window.location.href = '@Url.Action("Index", "CorrectiveAction", new { auditId = ViewBag.AuditId })';
+                } else {
+                    alert("Error: " + (result.message || "An error occurred."));
+                }
+            })
+            .catch(err => {
+                console.error("Fetch error:", err);
+                alert("An unexpected error occurred.");
+            });
+        });
+
+                // Auto close success alerts after 5 seconds
+        window.setTimeout(function() {
+           var alert = document.querySelector('.alert-success');
+              if (alert) {
+              var bsAlert = bootstrap.Alert.getInstance(alert) || new bootstrap.Alert(alert);
+              bsAlert.close();
+           }
+        }, 5000);
+    </script>

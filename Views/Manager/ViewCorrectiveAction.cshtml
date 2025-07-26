@@ -1,0 +1,48 @@
+@model SmartComply.Models.CorrectiveAction
+@{
+    ViewData["Title"] = "Corrective Action Details";
+}
+
+<h2>Corrective Action Details</h2>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">@Model.Audit?.AuditName</h5>
+        <p><strong>Auditor:</strong> @Model.Audit?.Staff?.StaffName</p>
+        <p><strong>Category:</strong> @Model.Audit?.Category?.CategoryName</p>
+        <p><strong>Description:</strong> @Model.Description</p>
+        <p><strong>Root Cause:</strong> @Model.RootCause</p>
+        <p><strong>Proposed Action:</strong> @Model.ProposedAction</p>
+        <p><strong>Responsible Person:</strong> @Model.ResponsiblePerson</p>
+        <p><strong>Target Date:</strong> @Model.TargetDate.ToShortDateString()</p>
+        <p><strong>Completion Date:</strong> @Model.CompletionDate?.ToShortDateString()</p>
+        <p><strong>Status:</strong> @Model.Status</p>
+        <p><strong>Remarks:</strong> @Model.Remarks</p>
+
+        <hr />
+        <div class="row">
+            <div class="col-md-6">
+                <strong>Before Photo:</strong><br />
+                @if (!string.IsNullOrWhiteSpace(Model.BeforeActionPhotoPath))
+                {
+                    <img src="@Url.Content(Model.BeforeActionPhotoPath)" class="img-fluid border" style="max-width: 100%;" alt="Before Photo" />
+                }
+                else
+                {
+                    <p class="text-muted">(No photo uploaded)</p>
+                }
+            </div>
+            <div class="col-md-6">
+                <strong>After Photo:</strong><br />
+                @if (!string.IsNullOrWhiteSpace(Model.AfterActionPhotoPath))
+                {
+                    <img src="@Url.Content(Model.AfterActionPhotoPath)" class="img-fluid border" style="max-width: 100%;" alt="After Photo" />
+                }
+                else
+                {
+                    <p class="text-muted">(No photo uploaded)</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

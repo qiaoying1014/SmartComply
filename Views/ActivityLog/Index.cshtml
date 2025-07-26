@@ -1,0 +1,56 @@
+@model List<SmartComply.ViewModels.ActivityLogViewModel>
+@{
+    ViewData["Title"] = "Activity Log";
+}
+
+<div class="card">
+    <!-- Breadcrumb Navigation -->
+    <div class="card-header p-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Index", User.IsInRole("Admin") ? "Admin" : User.IsInRole("Manager") ? "Manager" : "User")" class="btn btn-link text-primary p-0">Home</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Activity Log</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Activity Log</h5>
+    </div>
+
+    <div class="card-body">
+        <!-- Activity Logs Display -->
+        @foreach (var group in Model)
+        {
+            <div class="section-group mb-4">
+                <div class="section-header">
+                    <h6 class="text-muted">@group.GroupName</h6>
+                </div>
+
+                @foreach (var log in group.Logs)
+                {
+                    <div class="alert @(log.ActionType switch
+                        {
+                            SmartComply.Models.ActivityLog.ActionTypeEnum.Login => "alert-success",  // Green for Login
+                            SmartComply.Models.ActivityLog.ActionTypeEnum.Logout => "alert-warning", // Yellow for Logout
+                            SmartComply.Models.ActivityLog.ActionTypeEnum.Add => "alert-primary",    // Blue for Add
+                            SmartComply.Models.ActivityLog.ActionTypeEnum.Update => "alert-info",    // Light blue for Update
+                            SmartComply.Models.ActivityLog.ActionTypeEnum.Delete => "alert-danger",  // Red for Delete
+                            _ => "alert-secondary" // Default alert color
+                        })">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                @log.ActionDescription
+                            </div>
+                            <div class="text-muted">
+                                @log.ActionTimestamp.ToString("dd MMM yyyy HH:mm:ss")
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

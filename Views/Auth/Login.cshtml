@@ -1,0 +1,62 @@
+@using SmartComply.ViewModels
+@model LoginViewModel
+
+@{
+	ViewData["Title"] = "Login";
+	Layout = "_BlankLayout";
+}
+
+@section PageStyles {
+		<link rel="stylesheet" href="~/vendor/css/pages/page-auth.css">
+}
+
+<div class="container-xxl">
+	<div class="authentication-wrapper authentication-basic container-p-y">
+		<div class="authentication-inner">
+			<div class="card px-sm-6 px-0">
+				<div class="card-body">
+					<div class="app-brand justify-content-center">
+						<a href="/" class="app-brand-link gap-2">
+							<img src="~/img/SmartComply_logo.png" alt="SmartComply Logo" width="40" />
+							<span class="app-brand-text demo text-heading fw-bold">@TempData.Peek("appName")</span>
+						</a>
+					</div>
+					<br>
+
+					<div class="text-center">
+					  <h4 class="mb-1">Welcome to @TempData.Peek("appName")! 👋</h4>
+					  <p class="mb-6">Sign in to continue</p>
+					</div>
+
+					<form asp-action="Login" asp-controller="Auth" method="post">
+						<div class="mb-6">
+							<label class="form-label">Email</label>
+							<input asp-for="StaffEmail" class="form-control" placeholder="Enter your email" autofocus />
+							<span asp-validation-for="StaffEmail" class="text-danger"></span>
+						</div>
+
+						<div class="mb-6 form-password-toggle">
+							<label class="form-label" for="password">Password</label>
+							<div class="input-group input-group-merge">
+								<input type="password" asp-for="StaffPassword" class="form-control" placeholder="••••••••" />
+								<span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
+							</div>
+							<span asp-validation-for="StaffPassword" class="text-danger"></span>
+						</div>
+
+						@Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+						<div class="mb-6">
+							<button type="submit" class="btn btn-primary d-grid w-100">Login</button>
+						</div>
+					</form>
+
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+@section Scripts {
+	@await Html.PartialAsync("_ValidationScriptsPartial")
+}

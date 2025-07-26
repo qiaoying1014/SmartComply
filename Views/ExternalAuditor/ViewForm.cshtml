@@ -1,0 +1,133 @@
+@model SmartComply.Models.FormResponder
+@{
+	Layout = "_MinimalLayout";
+	ViewData["Title"] = "Form Details";
+}
+
+<!-- ► Metadata header -->
+<div class="card mb-4">
+	<div class="card-body">
+		<div class="mb-3">
+			<p><strong>Category:</strong> @Model.Form?.Category?.CategoryName</p>
+			<p><strong>Title:</strong> @Model.Form?.FormName</p>
+			<p><strong>Auditor Name:</strong> @Model.Staff?.StaffName (@Model.Branch?.BranchName)</p>
+			<p><strong>Submission Date:</strong> @Model.SubmittedAt.ToLocalTime().ToString("f")</p>
+		</div>
+	</div>
+</div>
+
+@foreach (var element in Model.Form.FormElements.OrderBy(e => e.Order))
+    {
+        var response = Model.Responses.FirstOrDefault(r => r.FormElementId == element.FormElementId);
+        var answer = response?.Answer;
+
+        var options = string.IsNullOrWhiteSpace(element.Options)
+            ? new List<string>()
+            : element.Options.Split(',').Select(o => o.Trim()).ToList();
+
+         if (element.ElementType == "CardStart")
+            {
+                @: <div class="card mb-3">
+                @:     <div class="card-body">
+                if (!string.IsNullOrEmpty(element.Label))
+                {
+                    @:         <h5 class="card-title">@element.Label</h5>
+                }
+                continue;
+            }
+
+        if (element.ElementType == "CardEnd")
+            {
+                @:     </div> <!-- Close card-body -->
+                @: </div> <!-- Close card -->
+                continue;
+            }
+
+        <div class="form-group mb-4">
+            <label class="form-label fw-bold">
+                @element.Label
+                @if (element.IsRequired)
+                {
+                    <span class="text-danger">*</span>
+                }
+            </label>
+
+            @switch (element.ElementType)
+            {
+                case "TextInput":
+                case "Email":
+                case "Number":
+                case "Date":
+                case "Time":
+                    <input type="@element.ElementType.ToLower()" class="form-control" value="@answer" disabled />
+                    break;
+
+                case "TextArea":
+                    <textarea class="form-control" disabled>@answer</textarea>
+                    break;
+
+                case "Checkbox":
+                    if (options.Any())
+                    {
+                        foreach (var opt in options)
+                        {
+                            var isChecked = answer?.Split(',').Contains(opt) == true;
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" checked="@isChecked" disabled />
+                                <label class="form-check-label">@opt</label>
+                            </div>
+                        }
+                    }
+                    break;
+
+                case "RadioButton":
+                    if (options.Any())
+                    {
+                        foreach (var opt in options)
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="radio_@element.FormElementId" checked="@(answer == opt)" disabled />
+                                <label class="form-check-label">@opt</label>
+                            </div>
+                        }
+                    }
+                    break;
+
+                case "Dropdown":
+                    <select class="form-select" disabled>
+                        @foreach (var opt in options)
+                        {
+                            <option selected="@(opt == answer)">@opt</option>
+                        }
+                    </select>
+                    break;
+
+                case "SectionHeader":
+                    <h4 class="mt-4 border-bottom pb-2">@element.Label</h4>
+                    break;
+
+                case "Description":
+                    <p class="text-muted fst-italic">@element.Label</p>
+                    break;
+
+                case "Divider":
+                    <hr />
+                    break;
+
+                case "FileUpload":
+                    @if (!string.IsNullOrWhiteSpace(answer))
+                    {
+                        <p><a href="@Url.Content(answer)" target="_blank">View uploaded file</a></p>
+                    }
+                    else
+                    {
+                        <p class="text-muted">(No file uploaded)</p>
+                    }
+                    break;
+
+                default:
+                    <p class="text-danger">(Unsupported element type: @element.ElementType)</p>
+                    break;
+            }
+        </div>
+    }

@@ -1,0 +1,117 @@
+@*@{
+    ViewData["Title"] = "Home Page";
+    var name = User.Identity?.Name;
+    var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome, @name!</h1>
+    <p>Your role is @role</p>
+</div>*@
+
+@{
+	ViewData["Title"] = "User Dashboard";
+}
+
+<div class="row">
+	<div class="col-12 mb-4">
+		<div class="card">
+			<div class="card-header">
+				<h5 class="m-0 text-center">My Audits Summary</h5>
+			</div>
+			<div class="text-center my-4" id="barLoader">
+				<div class="spinner-border text-primary" role="status">
+					<span class="visually-hidden">Loading...</span>
+				</div>
+			</div>
+			<div id="userAuditChartContainer" class="d-flex justify-content-center px-3 mb-3" style="height: 300px;">
+				<canvas id="userAuditChart"></canvas>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-12 mb-4">
+		<div class="card">
+			<div class="card-header">
+				<h5 class="m-0 text-center">Upcoming Deadlines (within 7 days)</h5>
+			</div>
+			<table class="table table-striped mb-0">
+			  <thead>
+				<tr>
+				  <th>Audit Name</th>
+				  <th>Due Date</th>
+				</tr>
+			  </thead>
+			  <tbody id="upcomingTableBody">
+				<tr>
+				  <td colspan="2" class="text-muted">Loading...</td>
+				</tr>
+			  </tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+@section Scripts {
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+		<script>
+			async function loadMyAuditSummary() {
+				const res = await fetch('/UserDashboard/GetMyAuditSummary');
+				const data = await res.json();
+
+				const ctx = document.getElementById('userAuditChart').getContext('2d');
+				new Chart(ctx, {
+					type: 'bar',
+					data: {
+						labels: ['Draft', 'Done', 'Overdue', 'Rejected'],
+						datasets: [{
+							data: [data.draft, data.done, data.overdue, data.rejected],
+							backgroundColor: ['#7367F0', '#28C76F', '#FFB64D', '#EA5455'],
+							borderRadius: 8,
+							barPercentage: 0.6
+						}]
+					},
+					options: {
+						indexAxis: 'y',
+						responsive: true,
+						plugins: {
+							legend: { display: false }
+						},
+						scales: {
+							x: { beginAtZero: true },
+							y: { ticks: { font: { size: 13 } } }
+						}
+					}
+				});
+				document.getElementById("barLoader").style.display = "none";
+			}
+
+				async function loadUpcomingDeadlines() {
+				  const res = await fetch('/UserDashboard/GetUpcomingDeadlines');
+				  const data = await res.json();
+				  const tableBody = document.getElementById('upcomingTableBody');
+				  tableBody.innerHTML = '';
+
+				  if (data.length === 0) {
+					  tableBody.innerHTML = `<tr><td colspan="2" class="text-muted">No upcoming deadlines</td></tr>`;
+					  return;
+				  }
+
+				  data.forEach(item => {
+					  const row = document.createElement('tr');
+					  row.innerHTML = `
+						  <td>${item.auditName}</td>
+						  <td><span class="text-danger">${item.dueDate}</span></td>
+					  `;
+					  tableBody.appendChild(row);
+				  });
+			  }
+
+			document.addEventListener('DOMContentLoaded', () => {
+				loadMyAuditSummary();
+				loadUpcomingDeadlines();
+			});
+		</script>
+}

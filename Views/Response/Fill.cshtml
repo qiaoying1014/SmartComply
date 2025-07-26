@@ -1,0 +1,403 @@
+@model SmartComply.ViewModels.FormFillViewModel
+
+@{
+    ViewData["Title"] = "Fill Form";
+    var auditId = Context.Request.Query["auditId"];
+    bool insideCard = false;
+}
+
+<div class="card">
+    <!-- Breadcrumb Navigation -->
+    <div class="card-header p-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Admin")" class="btn btn-link text-primary p-0">Home</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("MyAuditSummary", "Audit")" class="btn btn-link text-primary p-0">My Audit Summary</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("ViewCompliance", "Audit")" class="btn btn-link text-primary p-0">Compliance Selection</a></li>
+                <li class="breadcrumb-item">
+                    <a href="@Url.RouteUrl("AddAuditDetailsRoute", new { auditId = ViewBag.AuditId })" class="btn btn-link text-primary p-0">Select Form</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Fill Form</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card-header">
+        <h5 class="mb-0">Fill Form</h5>
+         <small class="text-muted d-block">For @Model.Category</small>
+    </div>
+
+    <div class="card-body">
+        <div class="staff-info mb-3 p-3 border rounded">
+            <p><strong>Staff Email:</strong> @Model.StaffEmail</p>
+            <p><strong>Branch Address:</strong> @Model.BranchAddress</p>
+            <p><strong>Branch Active:</strong> @(Model.BranchIsActive ? "Yes" : "No")</p>
+        </div>
+
+        <form asp-action="Preview" asp-controller="Response" method="post" enctype="multipart/form-data" id="dynamicForm">
+            <input type="hidden" asp-for="FormId" />
+            <input type="hidden" name="auditId" value="@auditId" />
+
+
+            <!-- Form Questions -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Form Questions</h5>
+                    <small class="text-muted d-block">For @Model.Category</small>
+
+                    @for (int i = 0; i < Model.Elements.Count; i++)
+                    {
+                        var el = Model.Elements[i];
+
+                        <input type="hidden" asp-for="Elements[@i].FormElementId" />
+                        <input type="hidden" asp-for="Elements[@i].ElementType" />
+                        <input type="hidden" asp-for="Elements[@i].Label" />
+                        <input type="hidden" asp-for="Elements[@i].Placeholder" />
+                        <input type="hidden" asp-for="Elements[@i].IsRequired" />
+                        <input type="hidden" asp-for="Elements[@i].Options" />
+
+                        if (el.ElementType == "CardStart")
+                        {
+                            if (insideCard)
+                            {
+                                @:</div></div>
+                            }
+                            insideCard = true;
+                            @:<div class="card mb-4">
+                            @:<div class="card-body">
+                            if (!string.IsNullOrWhiteSpace(el.Label))
+                            {
+                                <h5 class="card-title">@el.Label</h5>
+                            }
+                            continue;
+                        }
+                        else if (el.ElementType == "CardEnd")
+                        {
+                            if (insideCard)
+                            {
+                                @:</div></div>
+                                insideCard = false;
+                            }
+                            continue;
+                        }
+
+                        <div class="mb-4">
+                            @switch (el.ElementType)
+                            {
+                                case "TextInput":
+								case "Number":
+								case "Email":
+								case "Date":
+								case "Time":
+								{
+									string inputType = el.ElementType switch
+									{
+										"TextInput" => "text",
+										"Number" => "number",
+										"Email" => "email",
+										"Date" => "date",
+										"Time" => "time",
+										_ => "text"
+									};
+									<label class="form-label">
+										<strong>@el.Label</strong>
+										@if (el.IsRequired) { <span class="text-danger">*</span> }
+									</label>
+									<input name="Elements[@i].Answer[0]"
+											value="@(el.Answer?.FirstOrDefault() ?? "")"
+											type="@inputType"
+											class="form-control"
+											placeholder="@el.Placeholder"
+											data-val="@el.IsRequired.ToString().ToLower()"
+											data-val-required="@(el.IsRequired ? "This field is required." : "")" />
+									<span class="text-danger small" data-valmsg-for="Elements[@i].Answer[0]"></span>
+									break;
+								}
+
+								// TEXTAREA
+								case "TextArea":
+								{
+									<label class="form-label">
+										<strong>@el.Label</strong>
+										@if (el.IsRequired) { <span class="text-danger">*</span> }
+									</label>
+									<textarea name="Elements[@i].Answer[0]"
+											  class="form-control"
+											  placeholder="@el.Placeholder"
+											  data-val="@el.IsRequired.ToString().ToLower()"
+											  data-val-required="@(el.IsRequired ? "This field is required." : "")">@el.Answer?.FirstOrDefault()</textarea>
+									<span class="text-danger small" data-valmsg-for="Elements[@i].Answer[0]"></span>
+									break;
+								}
+
+								// CHECKBOX
+								case "Checkbox":
+								{
+									var options = el.Options?.Split(',') ?? Array.Empty<string>();
+									<label class="form-label">
+										<strong>@el.Label</strong>
+										@if (el.IsRequired) { <span class="text-danger">*</span> }
+									</label>
+									foreach (var opt in options.Select((value, index) => new { value, index }))
+									{
+										<div class="form-check">
+											<input type="checkbox"
+											 class="form-check-input"
+											 name="Elements[@i].Answer"
+											 value="@opt.value"
+											 data-val-group="group_@i"
+											 data-val-requiredcheckbox="At least one option must be selected."
+											 @(el.Answer != null && el.Answer.Contains(opt.value) ? "checked" : "") />
+
+											<label class="form-check-label">@opt.value</label>
+										</div>
+									}
+									<span class="text-danger small" data-valmsg-for="Elements[@i].Answer[0]"></span>
+									break;
+								}
+
+								// RADIO BUTTON
+								case "RadioButton":
+								{
+									var options = el.Options?.Split(',') ?? Array.Empty<string>();
+									<label class="form-label">
+										<strong>@el.Label</strong>
+										@if (el.IsRequired) { <span class="text-danger">*</span> }
+									</label>
+									foreach (var opt in options)
+									{
+										<div class="form-check">
+											<input type="radio"
+											 class="form-check-input"
+											 name="Elements[@i].Answer[0]"
+											 value="@opt"
+											 data-val="@el.IsRequired.ToString().ToLower()"
+											 data-val-required="@(el.IsRequired ? "Please select one option." : "")"
+											 @(el.Answer?.FirstOrDefault() == opt ? "checked" : "") />
+
+											<label class="form-check-label">@opt</label>
+										</div>
+									}
+									<span class="text-danger small" data-valmsg-for="Elements[@i].Answer[0]"></span>
+									break;
+								}
+
+								// DROPDOWN
+								case "Dropdown":
+								{
+									var options = el.Options?.Split(',') ?? Array.Empty<string>();
+									<label class="form-label">
+										<strong>@el.Label</strong>
+										@if (el.IsRequired) { <span class="text-danger">*</span> }
+									</label>
+									<select name="Elements[@i].Answer[0]"
+											class="form-select"
+											data-val="@el.IsRequired.ToString().ToLower()"
+											data-val-required="@(el.IsRequired ? "Please select an option." : "")">
+										<option value="">-- Select --</option>
+										@foreach (var opt in options)
+										{
+											<option value="@opt" selected="@(el.Answer?.FirstOrDefault() == opt)">
+												@opt
+											</option>
+										}
+									</select>
+									<span class="text-danger small" data-valmsg-for="Elements[@i].Answer[0]"></span>
+									break;
+								}
+
+								// FILE UPLOAD
+								case "FileUpload":
+								{
+									<label class="form-label">
+										<strong>@el.Label</strong>
+										@if (el.IsRequired) { <span class="text-danger">*</span> }
+
+										@if (!string.IsNullOrEmpty(el.Answer?.FirstOrDefault()))
+										{
+											var fileName = System.IO.Path.GetFileName(el.Answer.FirstOrDefault());
+											<span class="badge bg-success ms-2">Uploaded: @fileName</span>
+											<input type="hidden" name="Elements[@i].Answer[0]" value="@el.Answer.FirstOrDefault()" />
+										}
+									</label>
+
+									<input type="file"
+											name="Elements[@i].Files"
+											class="form-control"
+											data-val="@el.IsRequired.ToString().ToLower()"
+											data-val-required="@(el.IsRequired ? "File is required." : "")" />
+
+									<span class="text-danger small" data-valmsg-for="Elements[@i].Files"></span>
+									break;
+								}
+
+
+								// SECTION HEADER
+								case "SectionHeader":
+									<h4 class="mt-4 border-bottom pb-2">@el.Label</h4>
+									break;
+
+								// DESCRIPTION
+								case "Description":
+									<p class="text-muted fst-italic">@el.Label</p>
+									break;
+
+								// DIVIDER
+								case "Divider":
+									<hr />
+									break;
+
+                                default:
+                                    <p class="text-danger"><strong>Unknown type: @el.ElementType</strong></p>
+                                    break;
+                            }
+                        </div>
+                    }
+
+                    @if (insideCard)
+                    {
+                        @:</div></div>
+                        insideCard = false;
+                    }
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="d-grid mt-4">
+                <button type="button" class="btn btn-primary btn-lg" onclick="showPreviewConfirmationModal()">Preview Response</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal for Preview Confirmation -->
+<div class="modal fade" id="previewConfirmationModal" tabindex="-1" aria-labelledby="previewConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewConfirmationModalLabel">Confirm Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to preview this response? Make sure all information is correct before proceeding.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitForm()">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // Show modal
+        function showPreviewConfirmationModal() {
+            $('#previewConfirmationModal').modal('show');
+        }
+
+        // Confirm from modal and run custom validation
+        function submitForm() {
+            const form = document.getElementById('dynamicForm');
+            let isValid = true;
+
+            // Clear previous error messages
+            document.querySelectorAll('.text-danger.small').forEach(span => span.textContent = "");
+
+            // Loop through all required fields marked with data-val="true"
+            document.querySelectorAll('[data-val="true"]').forEach(input => {
+                const requiredMessage = input.getAttribute('data-val-required') || "This field is required.";
+                const name = input.getAttribute('name');
+                const fieldType = input.type;
+                const errorSpan = document.querySelector(`span[data-valmsg-for="${name}"]`);
+
+                if (fieldType === "checkbox") {
+                    // Handled in separate group validation
+                    return;
+                }
+
+                if (fieldType === "radio") {
+                    const radios = document.querySelectorAll(`input[name="${name}"]`);
+                    const anyChecked = Array.from(radios).some(r => r.checked);
+                    if (!anyChecked) {
+                        isValid = false;
+                        if (errorSpan) errorSpan.textContent = requiredMessage;
+                    }
+                }
+                else if (fieldType === "file") {
+                    if (!input.files || input.files.length === 0) {
+                        isValid = false;
+                        if (errorSpan) errorSpan.textContent = requiredMessage;
+                    }
+                }
+                else {
+                    const value = input.value.trim();
+                    if (!value) {
+                        isValid = false;
+                        if (errorSpan) errorSpan.textContent = requiredMessage;
+                    }
+                }
+            });
+
+            // Custom checkbox group validation
+            const groups = {};
+            document.querySelectorAll('input[data-val-group]').forEach(input => {
+                const group = input.dataset.valGroup;
+                groups[group] = groups[group] || [];
+                groups[group].push(input);
+            });
+
+            Object.keys(groups).forEach(group => {
+                const inputs = groups[group];
+                const name = inputs[0].getAttribute("name");
+                const errorSpan = document.querySelector(`span[data-valmsg-for="${name}[0]"]`);
+                const isChecked = inputs.some(i => i.checked);
+
+                if (!isChecked) {
+                    isValid = false;
+                    const message = inputs[0].dataset.valRequiredcheckbox || "Please select at least one option.";
+                    if (errorSpan) errorSpan.textContent = message;
+                } else {
+                    if (errorSpan) errorSpan.textContent = "";
+                }
+            });
+
+            if (isValid) {
+                form.submit(); // only submit if valid
+                $('#previewConfirmationModal').modal('hide');
+            }
+        }
+
+        // Prevent native submission if checkbox-only invalid
+        document.getElementById('dynamicForm').addEventListener('submit', function (event) {
+            let isValid = true;
+            const groups = {};
+
+            document.querySelectorAll('input[data-val-group]').forEach(input => {
+                const group = input.dataset.valGroup;
+                groups[group] = groups[group] || [];
+                groups[group].push(input);
+            });
+
+            Object.keys(groups).forEach(group => {
+                const inputs = groups[group];
+                const name = inputs[0].getAttribute("name");
+                const errorSpan = document.querySelector(`span[data-valmsg-for="${name}[0]"]`);
+                const isChecked = inputs.some(i => i.checked);
+
+                if (!isChecked) {
+                    isValid = false;
+                    const message = inputs[0].dataset.valRequiredcheckbox || "Please select at least one option.";
+                    if (errorSpan) errorSpan.textContent = message;
+                } else {
+                    if (errorSpan) errorSpan.textContent = "";
+                }
+            });
+
+            if (!isValid) {
+                event.preventDefault(); // stop submission
+            }
+        });
+    </script>
+}

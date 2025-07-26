@@ -1,0 +1,110 @@
+@{
+    TempData.Keep();
+    string? currentPage = ViewContext.HttpContext.Request.Path;
+}
+
+<!-- Menu -->
+<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+
+    <div class='app-brand demo @((@ViewData["navbarFull"] != null && Convert.ToBoolean(@ViewData["navbarFull"])) ? "d-xl-none" : "")'>
+        <a asp-controller="Admin" asp-action="Index" class="app-brand-link">
+			<img src="~/img/SmartComply_logo.png" alt="SmartComply Logo" width="20" />
+            <span class="app-brand-text demo menu-text fw-bold ms-2">@TempData.Peek("appName")</span>
+        </a>
+
+        <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
+            <i class="bx bx-chevron-left bx-sm d-flex align-items-center justify-content-center"></i>
+        </a>
+    </div>
+
+    <div class="menu-inner-shadow"></div>
+
+    <ul class="menu-inner py-1">
+
+        <!-- Forms - Add & Manage Forms -->
+        <li class='menu-item@(currentPage == "/Form" ? " active" : "")'>
+            <a href="javascript:void(0)" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-edit-alt"></i>
+                <div>Manage Forms</div>
+            </a>
+
+            <ul class="menu-sub">
+                <li class='menu-item@(currentPage == "/Form/Index" ? " active" : "")'>
+                    <a asp-controller="Form" asp-action="Index" class="menu-link">
+                        <div>Overview</div>
+                    </a>
+                </li>
+                <!-- Shortcut to Add Form -->
+                <li class='menu-item@(currentPage == "/Form/Add" ? " active" : "")'>
+                    <a asp-controller="Form" asp-action="Add" class="menu-link">
+                        <div>Add New Form</div>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <!-- Compliance Frameworks -->
+        <li class='menu-item@(currentPage == "/ComplianceCategory" ? " active" : "")'>
+            <a href="javascript:void(0)" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-collection"></i>
+                <div>Compliance Frameworks</div>
+            </a>
+
+            <ul class="menu-sub">
+                <li class='menu-item@(currentPage == "/ComplianceCategory/Index" ? " active" : "")'>
+                    <a asp-controller="ComplianceCategory" asp-action="Index" class="menu-link">
+                        <div>Overview</div>
+                    </a>
+                </li>
+                <!-- Shortcut to Add Compliance Framework -->
+                <li class='menu-item@(currentPage == "/ComplianceCategory/Add" ? " active" : "")'>
+                    <a asp-controller="ComplianceCategory" asp-action="Add" class="menu-link">
+                        <div>Add New Framework</div>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <!-- Staff & Branch Management -->
+        <li class='menu-item@(currentPage == "" ? " active" : "")'>
+            <a href="javascript:void(0)" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-user"></i>
+                <div>Staff & Branch Management</div>
+            </a>
+
+            <ul class="menu-sub">
+                <li class='menu-item@(currentPage == "/Staff/Index" ? " active" : "")'>
+                    <a asp-controller="Staff" asp-action="Index" class="menu-link">
+                        <div>Staff Overview</div>
+                    </a>
+                </li>
+                <!-- Shortcut to Add Staff -->
+                <li class='menu-item@(currentPage == "/Staff/Add" ? " active" : "")'>
+                    <a asp-controller="Staff" asp-action="Add" class="menu-link">
+                        <div>Add New Staff</div>
+                    </a>
+                </li>
+                <li class='menu-item@(currentPage == "/Branch/Index" ? " active" : "")'>
+                    <a asp-controller="Branch" asp-action="Index" class="menu-link">
+                        <div>Branch Overview</div>
+                    </a>
+                </li>
+                <!-- Shortcut to Add Staff -->
+                <li class='menu-item@(currentPage == "/Branch/Add" ? " active" : "")'>
+                    <a asp-controller="Branch" asp-action="Add" class="menu-link">
+                        <div>Add New Branch</div>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <li class="menu-item@(currentPage == "/ActivityLog/Index" ? " active" : "")">
+            <a href="@Url.Action("Index", "ActivityLog")" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-history"></i>
+                <div>Activity Log</div>
+            </a>
+        </li>
+    </ul>
+
+</aside>
+<!-- / Menu -->

@@ -1,0 +1,119 @@
+@model List<SmartComply.ViewModels.AuditSummaryViewModel>
+
+<div class="card">
+	<div class="card-header p-5">
+		<nav aria-label="breadcrumb">
+			<ol class="breadcrumb mb-0">
+				<li class="breadcrumb-item">
+					<a href="@Url.Action("Index", "Manager")" class="btn btn-link text-primary p-0">Home</a>
+				</li>
+			</ol>
+		</nav>
+	</div>
+	<div class="card-body">
+		<div class="table-responsive">
+			<table class="table table-hover">
+				<thead>
+					<tr>
+						<th>Audit Name</th>
+						<th>Auditor</th>
+						<th>Create Date</th>
+						<th>Status</th>
+						<th>Due Date</th>
+						<th>Form Count</th>
+						<th>Corrective Actions</th>
+						<th>Action</th>
+					</tr>
+				</thead>
+				<tbody>
+					@foreach (var item in Model)
+					{
+						<tr>
+							<td>
+								<a href="@Url.Action("AuditDetails", "ViewAudit", new { auditId = item.Audit.AuditId })" target="_blank">
+									@item.Audit.AuditName
+								</a>
+							</td>
+							<td>@item.Audit.Staff?.StaffName</td>
+							<td>@item.Audit.CreatedAt.ToShortDateString()</td>
+							<td>@item.Audit.Status</td>
+							<td>@item.Audit.DueDate.ToShortDateString()</td>
+							<td>@item.FormCount</td>
+							<td>@item.CorrectiveActionCount</td>
+							<td>
+								<button type="button"
+										class="btn btn-outline-primary btn-sm btn-generate-qr"
+										data-auditid="@item.Audit.AuditId">
+									Generate QR
+								</button>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+<!-- QR Modal (fixed 200×200) -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="qrModalLabel">Scan to View Audit</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body text-center">
+				<div style="width:200px; height:200px; margin:0 auto; position:relative;">
+					<div id="qrSpinner" class="spinner-border text-primary"
+						 style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+						<span class="visually-hidden">Loading...</span>
+					</div>
+					<img id="qrModalImg"
+						 alt="Audit QR"
+						 style="width:100%; height:100%; display:none;" />
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+@section Scripts {
+	<script>
+		// MUST point to your ManagerController.Qr action
+		const qrBase = '@Url.Action("Qr", "ViewAudit")';
+
+		const qrImg     = document.getElementById('qrModalImg');
+		const qrSpinner = document.getElementById('qrSpinner');
+
+		document.querySelectorAll('.btn-generate-qr').forEach(btn => {
+		  btn.addEventListener('click', () => {
+			const auditId = btn.dataset.auditid;
+			const url     = `${qrBase}?auditId=${auditId}&_=${Date.now()}`;
+
+			console.log("⏳ Fetching QR:", url);  // check the console!
+
+			// Show modal & spinner
+			new bootstrap.Modal(document.getElementById('qrModal')).show();
+			qrSpinner.style.display = 'block';
+			qrImg.style.display     = 'none';
+			qrImg.removeAttribute('src');
+
+			// Attach load + error handlers
+			qrImg.onload = () => {
+			  console.log("✅ QR loaded");
+			  qrSpinner.style.display = 'none';
+			  qrImg.style.display     = 'block';
+			};
+			qrImg.onerror = () => {
+			  console.error("❌ Failed to load QR");
+			  qrSpinner.style.display = 'none';
+			};
+
+			// Kick off the request
+			qrImg.src = url;
+		  });
+		});
+	</script>
+}
+

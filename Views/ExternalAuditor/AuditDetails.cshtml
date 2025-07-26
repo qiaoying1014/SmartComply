@@ -1,0 +1,79 @@
+@model SmartComply.Models.Audit
+
+@{
+    Layout = "_MinimalLayout";
+    ViewData["Title"] = "Audit Details";
+}
+
+<div class="card">
+    <div class="container mt-4">
+        <h2>@Model.AuditName</h2>
+        <p><strong>Due Date:</strong> @Model.DueDate.ToShortDateString()</p>
+        <p><strong>Category:</strong> @Model.Category?.CategoryName</p>
+        <p><strong>Auditor Name:</strong> @Model.Staff?.StaffName</p>
+
+        <hr />
+
+        <h4>Forms</h4>
+        @if (Model.FormResponders.Any())
+        {
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Form Name</th>
+                        <th>Auditor Name</th>
+                        <th>Submission Date</th>
+                        <th>View</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var responder in Model.FormResponders)
+                    {
+                        <tr>
+                            <td>@responder.Form?.FormName</td>
+                            <td>@responder.Staff?.StaffName</td>
+                            <td>@responder.SubmittedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>
+                                <!-- Corrected URL to ExternalViewForm in ViewAuditController -->
+                                <a href="@Url.Action("ExternalViewForm", "ViewAudit", new { id = responder.FormResponderId })">
+                                    View Form
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>No forms submitted for this audit.</p>
+        }
+
+        <hr />
+
+        <h4>Corrective Actions</h4>
+        @{
+            var correctiveActions = ViewBag.CorrectiveActions as List<SmartComply.Models.CorrectiveAction>;
+        }
+        @if (correctiveActions?.Any() == true)
+        {
+            <ul class="list-group">
+                @foreach (var ca in correctiveActions)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        @ca.Description
+                        <!-- Corrected URL to ExternalViewCorrectiveAction in ViewAuditController -->
+                        <a href="@Url.Action("ExternalViewCorrectiveAction", "ViewAudit", new { id = ca.CorrectiveActionId })">
+                            View Corrective Action
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p>No corrective actions found for this audit.</p>
+        }
+
+    </div>
+</div>

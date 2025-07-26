@@ -1,0 +1,57 @@
+@{
+    TempData.Keep();
+    string? currentPage = ViewContext.HttpContext.Request.Path;
+}
+
+<!-- Menu -->
+<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+
+    <div class='app-brand demo @((@ViewData["navbarFull"] != null && Convert.ToBoolean(@ViewData["navbarFull"])) ? "d-xl-none" : "")'>
+        <a asp-controller="User" asp-action="Index" class="app-brand-link">
+			<img src="~/img/SmartComply_logo.png" alt="SmartComply Logo" width="20" />
+            <span class="app-brand-text demo menu-text fw-bold ms-2">@TempData.Peek("appName")</span>
+        </a>
+
+        <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
+            <i class="bx bx-chevron-left bx-sm d-flex align-items-center justify-content-center"></i>
+        </a>
+    </div>
+
+    <div class="menu-inner-shadow"></div>
+
+    <ul class="menu-inner py-1">
+
+        <!-- Audit Management -->
+        <li class='menu-item@(currentPage == "/Audit" ? " active" : "")'>
+            <a href="javascript:void(0)" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-folder"></i>
+                <div>Audit Management</div>
+            </a>
+            <ul class="menu-sub">
+                <!-- Audit Overview -->
+                <li class='menu-item@(currentPage == "/Audit/MyAuditSummary" ? " active" : "")'>
+                    <a asp-controller="Audit" asp-action="MyAuditSummary" class="menu-link">
+                        <div>Overview</div> 
+                    </a>
+                </li>
+
+                <!-- Audit Action -->
+                <li class='menu-item@(currentPage == "/Audit/ViewCompliance" ? " active" : "")'>
+                    <a asp-controller="Audit" asp-action="ViewCompliance" class="menu-link">
+                        <div>Conduct Audit</div> 
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <li class="menu-item@(currentPage == "/ActivityLog/Index" ? " active" : "")">
+            <a href="@Url.Action("Index", "ActivityLog")" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-history"></i>
+                <div>Activity Log</div>
+            </a>
+        </li>
+
+    </ul>
+
+</aside>
+<!-- / Menu -->

@@ -1,0 +1,181 @@
+@model IEnumerable<SmartComply.Models.ComplianceCategory>
+
+@{
+    ViewData["Title"] = "Compliance Categories Management";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    TempData.Remove("SuccessMessage");
+}
+
+<div class="card">
+    <div class="card-header p-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Admin")" class="btn btn-link text-primary p-0">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Compliance Category Management</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Compliance Categories Management</h5>
+        <a asp-action="Add" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Click to add a new category">+ Add Category</a>
+    </div>
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <!-- Filter and search form -->
+            <form method="get" asp-action="Index" role="search" class="d-flex" style="width: 100%;">
+                <div class="d-flex align-items-center rounded-pill border overflow-hidden" style="border-color: #ced4da; width: 100%;">
+                    <!-- Dropdown filter -->
+                    <select name="statusFilter" aria-label="Filter by status" class="form-control border-0 rounded-0" style="max-width: 120px; box-shadow: none; height: 50px; -webkit-appearance: none; -moz-appearance: none; font-size: 1rem; background-color: transparent !important;">
+                        <option value="" selected="@(string.IsNullOrEmpty(ViewBag.StatusFilter?.ToString()) ? "selected" : null)">All Statuses</option>
+                        <option value="enable" selected="@(ViewBag.StatusFilter?.ToString().ToLower() == "enable" ? "selected" : null)">Enabled</option>
+                        <option value="disable" selected="@(ViewBag.StatusFilter?.ToString().ToLower() == "disable" ? "selected" : null)">Disabled</option>
+                    </select>
+
+                    <!-- Separator line -->
+                    <div style="width: 1px; background-color: #999; height: 30px; margin: 0 8px;"></div>
+
+                    <!-- Search input -->
+                    <input type="search" name="searchTerm" placeholder="What are you looking for ...?" value="@(ViewBag.SearchTerm ?? "")" aria-label="Search" class="form-control border-0 rounded-0 flex-grow-1" style="box-shadow: none; height: 45px; font-size: 1rem; background-color: transparent !important;">
+
+                    <!-- Search button -->
+                    <button type="submit" class="btn btn-warning rounded-pill ml-2 d-flex align-items-center justify-content-center" aria-label="Search" style="height: 50px; padding: 0 1.25rem;" data-bs-toggle="tooltip" data-bs-placement="top" title="Click to search">
+                        <i class="bx bx-search" style="font-size: 1.2rem;"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center">No compliance categories available.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var category in Model)
+                        {
+                            <tr>
+                                <td>@category.CategoryName</td>
+                                <td>@category.CategoryDescription</td>
+                                <td>
+                                    @if (category.CategoryIsEnabled)
+                                    {
+                                        <span class="badge bg-label-success">Enabled</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-label-warning">Disabled</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="dropdown">
+                                        <button type="button" class="btn p-0 dropdown-toggle" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <div class="dropdown-menu">
+                                            <a asp-action="Edit" asp-route-id="@category.CategoryId" class="dropdown-item">
+                                                <i class="bx bx-edit"></i> Edit
+                                            </a>
+
+                                            @if (category.CategoryIsEnabled)
+                                            {
+                                                <!-- Disable Action -->
+                                                <a class="dropdown-item text-warning" href="javascript:void(0);"
+                                                   onclick="showConfirmationModal('disable', '@category.CategoryId')">
+                                                    <i class="bx bx-toggle-left me-1"></i> Disable
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <!-- Enable Action -->
+                                                <a class="dropdown-item text-success" href="javascript:void(0);"
+                                                   onclick="showConfirmationModal('enable', '@category.CategoryId')">
+                                                    <i class="bx bx-toggle-right me-1"></i> Enable
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Confirmation -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalLabel">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to <span id="actionType">enable</span> this category?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmActionBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showConfirmationModal(action, categoryId) {
+        // Set the action type dynamically in the modal (Enable/Disable)
+        document.getElementById('actionType').textContent = action;
+
+        // Store the categoryId in a custom data attribute for later use
+        var confirmButton = document.getElementById('confirmActionBtn');
+        confirmButton.setAttribute('data-category-id', categoryId); // Set category ID for later
+
+        // Show the modal
+        $('#confirmationModal').modal('show');
+    }
+
+    // Handle the confirmation button click
+    document.getElementById('confirmActionBtn').addEventListener('click', function() {
+        // Get the category ID from the button's data attribute
+        var categoryId = this.getAttribute('data-category-id');
+
+        // Get the action (Enable or Disable) from the modal text
+        var actionType = document.getElementById('actionType').textContent.toLowerCase();
+
+        // Perform the toggle action (Redirect to the URL to toggle status)
+        var url = '@Url.Action("ToggleStatus", new { id = "__categoryId__" })'.replace('__categoryId__', categoryId);
+        window.location.href = url; // Redirect to toggle the status
+    });
+
+    // Auto close success alerts after 5 seconds
+    window.setTimeout(function() {
+       var alert = document.querySelector('.alert-success');
+          if (alert) {
+          var bsAlert = bootstrap.Alert.getInstance(alert) || new bootstrap.Alert(alert);
+          bsAlert.close();
+       }
+    }, 5000);
+</script>
+

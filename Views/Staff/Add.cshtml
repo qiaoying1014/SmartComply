@@ -1,0 +1,142 @@
+@model SmartComply.ViewModels.StaffViewModel
+
+@{
+    ViewData["Title"] = "Add Staff";
+}
+
+<div class="card">
+    <div class="card-header p-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Admin")" class="btn btn-link text-primary p-0">Home</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Staff")" class="btn btn-link text-primary p-0">Staff Management</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Add New Staff</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Add New Staff</h5>
+        <div>
+            <!-- Reset Button with Tooltip -->
+            <button type="button" class="btn btn-outline-secondary me-2" onclick="showResetConfirmationModal()" data-bs-toggle="tooltip" data-bs-placement="top" title="Reset the form and clear any changes made">Reset</button>
+
+            <!-- Save Button with Tooltip -->
+            <button type="button" class="btn btn-primary" onclick="showSaveConfirmationModal()" data-bs-toggle="tooltip" data-bs-placement="top" title="Save the form changes">Save</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <form id="form-builder" asp-action="Add" method="post" autocomplete="off">
+            <div class="mb-3">
+                <label asp-for="StaffName" class="form-label">Full Name</label>
+                <input asp-for="StaffName" class="form-control" placeholder="John Doe" autocomplete="off" />
+                <span asp-validation-for="StaffName" class="text-danger"></span>
+            </div>
+
+			<div class="mb-3">
+				<label asp-for="StaffRole" class="form-label">Role</label>
+				<select asp-for="StaffRole" class="form-select">
+					<option value="User">User</option>
+					<option value="Manager">Manager</option>
+				</select>
+				<span asp-validation-for="StaffRole" class="text-danger"></span>
+			</div>
+
+            <div class="mb-3">
+                <label asp-for="StaffEmail" class="form-label">Email</label>
+                <div class="input-group input-group-merge">
+                    <input asp-for="StaffEmail" class="form-control" placeholder="john.doe@example.com" autocomplete="off" />
+                </div>
+                <span asp-validation-for="StaffEmail" class="text-danger"></span> <!-- Add this to display the validation error -->
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="NewPassword" class="form-label">New Password</label>
+                <input asp-for="NewPassword" type="password" class="form-control" placeholder="Enter password" autocomplete="off" />
+                <span asp-validation-for="NewPassword" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ConfirmPassword" class="form-label">Confirm Password</label>
+                <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Confirm password" autocomplete="off" />
+                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="StaffBranchId" class="form-label">Branch</label>
+                <select asp-for="StaffBranchId" class="form-select" asp-items="ViewBag.Branches"></select>
+                <span asp-validation-for="StaffBranchId" class="text-danger"></span>
+            </div>
+
+            <input type="hidden" asp-for="StaffIsActive" value="true" />
+        </form>
+    </div>
+</div>
+
+<!-- Modal for Reset Confirmation -->
+<div class="modal fade" id="resetConfirmationModal" tabindex="-1" aria-labelledby="resetConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetConfirmationModalLabel">Confirm Reset</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to reset this form? All changes will be lost.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="resetForm()">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Save Confirmation -->
+<div class="modal fade" id="saveConfirmationModal" tabindex="-1" aria-labelledby="saveConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="saveConfirmationModalLabel">Confirm Save</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to save these changes?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitForm()">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        // Show Reset Confirmation Modal
+        function showResetConfirmationModal() {
+            $('#resetConfirmationModal').modal('show');
+        }
+
+        // Show Save Confirmation Modal
+        function showSaveConfirmationModal() {
+            $('#saveConfirmationModal').modal('show');
+        }
+
+        // Reset the form fields
+        function resetForm() {
+            // Reset the form to its initial state
+            $('#form-builder')[0].reset();
+            $('#resetConfirmationModal').modal('hide'); // Hide reset modal after reset
+        }
+
+        // Submit the form
+        function submitForm() {
+            // Trigger form submission manually
+            $('#form-builder').submit();
+            $('#saveConfirmationModal').modal('hide'); // Hide save modal after submission
+        }
+    </script>
+}

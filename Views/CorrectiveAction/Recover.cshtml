@@ -1,0 +1,205 @@
+@using SmartComply.Models
+@model IEnumerable<CorrectiveAction>
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery AntiForgery
+
+@{
+    ViewData["Title"] = "Deleted Corrective Actions";
+    var tokens = AntiForgery.GetAndStoreTokens(ViewContext.HttpContext);
+}
+
+
+<div class="card">
+    <!-- Breadcrumb Navigation -->
+    <div class="card-header p-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Admin")" class="btn btn-link text-primary p-0">Home</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("MyAuditSummary", "Audit")" class="btn btn-link text-primary p-0">My Audit Summary</a></li>
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Index", "CorrectiveAction", new { auditId = ViewBag.AuditId })" class="btn btn-link text-primary p-0">
+                        Corrective Action Management
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Recover Corrective Action</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Deleted Corrective Actions</h5>
+    </div>
+
+    <div class="card-body">
+        <!-- Filter and Search form -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <form method="get" asp-action="Recover" class="d-flex" style="width: 100%;">
+                <!-- Add Hidden input for auditId -->
+                <input type="hidden" name="auditId" value="@ViewBag.AuditId" />
+
+                <div class="d-flex align-items-center rounded-pill border overflow-hidden" style="border-color: #ced4da; width: 100%;">
+
+                    <!-- Status Filter Dropdown -->
+                    <select name="statusFilter" aria-label="Filter by status" class="form-control border-0 rounded-0" style="max-width: 120px; box-shadow: none; height: 50px; font-size: 1rem; background-color: transparent !important;">
+                        <option value="" selected="@(string.IsNullOrEmpty(ViewBag.StatusFilter?.ToString()) ? "selected" : null)">All Statuses</option>
+                        <option value="Pending" selected="@(ViewBag.StatusFilter?.ToString().ToLower() == "pending" ? "selected" : null)">Pending</option>
+                        <option value="InProgress" selected="@(ViewBag.StatusFilter?.ToString().ToLower() == "inprogress" ? "selected" : null)">In Progress</option>
+                        <option value="Completed" selected="@(ViewBag.StatusFilter?.ToString().ToLower() == "completed" ? "selected" : null)">Completed</option>
+                        <option value="Overdue" selected="@(ViewBag.StatusFilter?.ToString().ToLower() == "overdue" ? "selected" : null)">Overdue</option>
+                    </select>
+
+                    <!-- Separator line -->
+                    <div style="width: 1px; background-color: #999; height: 30px; margin: 0 8px;"></div>
+
+                    <!-- Search input -->
+                    <input type="search" name="searchTerm" placeholder="Search actions..." value="@(ViewBag.SearchTerm ?? "")" aria-label="Search" class="form-control border-0 rounded-0 flex-grow-1" style="box-shadow: none; height: 45px; font-size: 1rem; background-color: transparent !important;">
+
+                    <!-- Search button -->
+                    <button type="submit" class="btn btn-warning rounded-pill ml-2 d-flex align-items-center justify-content-center" aria-label="Search" style="height: 50px; padding: 0 1.25rem;">
+                        <i class="bx bx-search" style="font-size: 1.2rem;"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Table to display deleted corrective actions -->
+        <div class="table-responsive text-nowrap">
+            <table class="table table-bordered" id="deletedCorrectiveActionsTable">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Responsible Person</th>
+                        <th>Target Date</th>
+                        <th>Completion Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr id="row-@item.CorrectiveActionId">
+                            <td>@item.Description</td>
+                            <td>@item.ResponsiblePerson</td>
+                            <td>@item.TargetDate.ToString("dd-MM-yyyy")</td>
+                            <td>
+                                @(item.CompletionDate.HasValue
+                                    ? item.CompletionDate.Value.ToString("dd-MM-yyyy")
+                                    : "")
+                            </td>
+                            @* <td>@(item.CompletionDate?.ToString("dd-MM-yyyy") ?? "")</td> *@
+                            <td>
+                                @switch (item.Status)
+                                {
+                                    case CorrectiveActionStatus.Pending:
+                                        <span class="badge bg-label-warning">Pending</span>
+                                        break;
+                                    case CorrectiveActionStatus.InProgress:
+                                        <span class="badge bg-label-info">In Progress</span>
+                                        break;
+                                    case CorrectiveActionStatus.Completed:
+                                        <span class="badge bg-label-success">Completed</span>
+                                        break;
+                                    case CorrectiveActionStatus.Overdue:
+                                        <span class="badge bg-label-danger">Overdue</span>
+                                        break;
+                                }
+                            </td>
+                            <td>
+                                <button type="button"
+                                        class="btn btn-sm btn-success"
+                                        onclick="confirmRecover(@item.CorrectiveActionId)">
+                                    <i class="bx bx-undo me-1"></i>Recover
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (!Model.Any())
+            {
+                <div class="text-center text-muted py-4">
+                    No deleted corrective actions found.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Confirmation -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalLabel">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to <span id="confirmationAction">recover this corrective action</span>?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmActionBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const antiForgeryToken = '@tokens.RequestToken';
+
+    function confirmRecover(id) {
+        console.log("confirmRecover called for id:", id);
+        showConfirmationModal('recover', id);
+    }
+
+    function showConfirmationModal(actionType, id) {
+        var modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+        document.getElementById('confirmationAction').textContent = actionType === 'recover' ? 'recover this corrective action' : 'perform this action';
+
+        // Show the modal
+        modal.show();
+
+        // Handle confirmation
+        document.getElementById('confirmActionBtn').onclick = function() {
+            if (actionType === 'recover') {
+                recoverCorrectiveAction(id);
+            }
+            modal.hide(); // Close the modal
+        }
+    }
+
+    function recoverCorrectiveAction(id) {
+        const formData = new FormData();
+        formData.append("__RequestVerificationToken", antiForgeryToken);
+        formData.append("id", id);
+
+        fetch('@Url.Action("SoftRecover", "CorrectiveAction")', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => {
+            console.log("recover fetch status:", res.status);
+            if (!res.ok) throw new Error("Network response was not ok");
+            return res.json();
+        })
+        .then(result => {
+            console.log("recover response JSON:", result);
+            if (result.success) {
+                // Remove the row so it disappears immediately
+                const row = document.getElementById("row-" + id);
+                if (row) row.remove();
+
+                // Redirect to the Index page after successful recovery
+                window.location.href = '@Url.Action("Index", "CorrectiveAction", new { auditId = ViewBag.AuditId })';
+            } else {
+                alert("Error: " + (result.message || "Could not recover."));
+            }
+        })
+        .catch(err => {
+            console.error("recover error:", err);
+            alert("An unexpected error occurred.");
+        });
+    }
+</script>
+

@@ -1,0 +1,68 @@
+@model SmartComply.Models.Audit
+@{
+	Layout = "_MinimalLayout";
+	ViewData["Title"] = "Audit Details";
+	var token = ViewData["Token"] as string;
+}
+
+<div class="card">
+	<div class="container mt-4">
+		<h2>@Model.AuditName</h2>
+		<!-- … other audit info … -->
+
+		<hr />
+		<h4>Forms</h4>
+		@if (Model.FormResponders.Any())
+		{
+			<ul class="list-group mb-4">
+				@foreach (var r in Model.FormResponders)
+				{
+					<li class="list-group-item d-flex justify-content-between align-items-center">
+						@r.Form?.FormName
+						<a class="btn btn-sm btn-outline-primary"
+						   href="@Url.Action(
+                     "ExternalViewForm",
+                     "ViewAudit",
+                     new { id = r.FormResponderId, token = token })"
+						   target="_blank">
+							<i class="bx bx-show me-1"></i> View Form
+						</a>
+					</li>
+				}
+			</ul>
+		}
+		else
+		{
+			<p>No forms submitted for this audit.</p>
+		}
+
+		<hr />
+		<h4>Corrective Actions</h4>
+		@{
+			var cas = ViewBag.CorrectiveActions as List<SmartComply.Models.CorrectiveAction>;
+		}
+		@if (cas?.Any() == true)
+		{
+			<ul class="list-group">
+				@foreach (var ca in cas)
+				{
+					<li class="list-group-item d-flex justify-content-between align-items-center">
+						@ca.Description
+						<a class="btn btn-sm btn-outline-primary"
+						   href="@Url.Action(
+                     "ExternalViewCorrectiveAction",
+                     "ViewAudit",
+                     new { id = ca.CorrectiveActionId, token = token })"
+						   target="_blank">
+							<i class="bx bx-show me-1"></i> View Details
+						</a>
+					</li>
+				}
+			</ul>
+		}
+		else
+		{
+			<p>No corrective actions found for this audit.</p>
+		}
+	</div>
+</div>
